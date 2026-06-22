@@ -75,7 +75,7 @@ python app.py
 <h3>Backend will start on:</h3>
 
 ```bash
-http://localhost:5000
+http://localhost:5002
 ```
 
 <h3>Frontend Setup</h3>
