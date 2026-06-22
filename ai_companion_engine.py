@@ -3,10 +3,8 @@ import json
 import re
 import random
 
-# Groq API Key
 GROQ_API_KEY = "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"
 
-# Groq Endpoint
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 print("✅ Groq Autism AI Teacher Enabled")

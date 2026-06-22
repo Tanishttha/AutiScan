@@ -2,7 +2,6 @@ import json
 import requests
 
 
-# Groq API Configuration
 GROQ_API_KEY = "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"
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"

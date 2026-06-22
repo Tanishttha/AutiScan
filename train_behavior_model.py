@@ -3,10 +3,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import joblib
 
-# Load dataset
 df = pd.read_csv("behavior_dataset.csv")
 
-# Advanced behavioral features
 X = df[
     [
         "face_offset",
@@ -24,15 +22,12 @@ X = df[
     ]
 ]
 
-# Labels
 y = df["label"]
 
-# Encode labels
 encoder = LabelEncoder()
 
 y_encoded = encoder.fit_transform(y)
 
-# Advanced RandomForest model
 model = RandomForestClassifier(
     n_estimators=500,
     max_depth=18,
@@ -44,12 +39,10 @@ model = RandomForestClassifier(
 
 model.fit(X, y_encoded)
 
-# Training accuracy
 accuracy = model.score(X, y_encoded)
 
 print(f"✅ Training Accuracy: {round(accuracy * 100, 2)}%")
 
-# Save
 joblib.dump(model, "behavior_model.pkl")
 joblib.dump(encoder, "label_encoder.pkl")
 

@@ -55,7 +55,6 @@ class RecommendationEngine:
             "social_response_score", random.randint(50, 95)
         )
 
-        # LOW EYE CONTACT
         if gaze_stability < 45:
             detected_issues.append("Low Eye Contact")
             recommendations.append(
@@ -63,7 +62,6 @@ class RecommendationEngine:
             )
             progress_score -= 15
 
-        # ATTENTION FATIGUE
         if blink_frequency > 0.30:
             detected_issues.append("Attention Fatigue")
             recommendations.append(
@@ -71,7 +69,6 @@ class RecommendationEngine:
             )
             progress_score -= 10
 
-        # HYPERACTIVITY
         if hyperactivity_score > 70:
             detected_issues.append("Hyperactivity")
             recommendations.append(
@@ -79,7 +76,6 @@ class RecommendationEngine:
             )
             progress_score -= 20
 
-        # SOCIAL INTERACTION ISSUES
         if engagement in [
             "Distracted",
             "Low Attention",
@@ -91,7 +87,6 @@ class RecommendationEngine:
             )
             progress_score -= 10
 
-        # MEMORY / COGNITIVE WEAKNESS
         if focus_duration < 15:
             detected_issues.append("Memory Weakness")
             recommendations.append(
@@ -99,7 +94,6 @@ class RecommendationEngine:
             )
             progress_score -= 10
 
-        # SENSORY SENSITIVITY
         if movement_variance > 5000:
             detected_issues.append("Sensory Sensitivity")
             recommendations.append(
@@ -107,7 +101,6 @@ class RecommendationEngine:
             )
             progress_score -= 10
 
-        # SPEECH DELAY (future integration placeholder)
         if analysis_data.get("speech_delay", False):
             detected_issues.append("Speech Delay")
             recommendations.append(
@@ -115,7 +108,6 @@ class RecommendationEngine:
             )
             progress_score -= 15
 
-        # SLOW VERBAL RESPONSE
         if analysis_data.get("slow_response", False):
             detected_issues.append("Slow Verbal Response")
             recommendations.append(
@@ -123,7 +115,6 @@ class RecommendationEngine:
             )
             progress_score -= 10
 
-        # REMOVE DUPLICATES
         unique_recommendations = []
         seen_goals = set()
 
@@ -136,7 +127,6 @@ class RecommendationEngine:
 
         recommendations = unique_recommendations
 
-        # REALTIME AI INSIGHTS
         if attention_score < 50:
             realtime_insights.append(
                 "⚠ Low sustained attention detected during interaction."
@@ -202,7 +192,6 @@ class RecommendationEngine:
             "focus_trend": focus_trend
         }
 
-        # BADGES
         if attention_score >= 90:
             badges.append("🏆 Focus Master")
 
@@ -215,12 +204,10 @@ class RecommendationEngine:
         if progress_score >= 85:
             badges.append("⭐ Rising Achiever")
 
-        # DAILY STREAK ESTIMATION
         streak_days = int(
             max(1, focus_duration // 5)
         )
 
-        # AI ROADMAP
         roadmap = [
             {
                 "week": "Week 1",
@@ -268,7 +255,6 @@ class RecommendationEngine:
             }
         ]
 
-        # IMPROVEMENT LEVEL
         if progress_score >= 85:
             improvement_level = "Excellent"
 
@@ -281,11 +267,9 @@ class RecommendationEngine:
         else:
             improvement_level = "Needs Attention"
 
-        # Generate Gemini AI Therapy Guidance
         ai_generated_plan = generate_ai_therapy(
             analysis_data
         )
-        # MERGE AI GENERATED DATA
         dynamic_roadmap = ai_generated_plan.get(
             "weekly_roadmap", []
         )
@@ -338,7 +322,6 @@ class RecommendationEngine:
         return result
 
 
-# Global recommendation engine instance
 recommendation_engine = RecommendationEngine()
 
 

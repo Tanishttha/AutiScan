@@ -8,13 +8,11 @@ import dlib
 from scipy.spatial import distance as scipy_distance
 from recommendation_engine import recommendation_engine
 
-# OpenCV DNN Face Detector
 net = cv2.dnn.readNetFromCaffe(
     "models/deploy.prototxt",
     "models/res10_300x300_ssd_iter_140000.caffemodel"
 )
 
-# Optional ML behavioral model
 behavior_model = None
 label_encoder = None
 
@@ -22,7 +20,6 @@ if os.path.exists("behavior_model.pkl") and os.path.exists("label_encoder.pkl"):
     behavior_model = joblib.load("behavior_model.pkl")
     label_encoder = joblib.load("label_encoder.pkl")
 
-# dlib facial landmark detector
 face_detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(
     "models/shape_predictor_68_face_landmarks.dat"
@@ -42,7 +39,6 @@ class AttentionTracker:
         self.movement_history = []
         self.previous_score = 70
 
-        # Advanced analytics
         self.position_history = []
         self.gaze_history = []
         self.prediction_history = []
@@ -156,17 +152,14 @@ class AttentionTracker:
                 blink_detected = True
                 self.blink_count += 1
 
-            # Focus duration
             focus_duration = int(
                 time.time() - self.focus_start_time
             )
 
-            # Dynamic attention score
             attention_score = max(55, 100 - int(distance / 4))
 
             self.focus_frames += 1
 
-            # Dynamic gaze estimation
             if face_center_x < frame_center - 80:
                 gaze_direction = "Left"
 
@@ -176,7 +169,6 @@ class AttentionTracker:
             else:
                 gaze_direction = "Center"
 
-            # Landmark-based gaze estimation
             nose_x = landmarks.part(30).x
 
             if nose_x < frame_center - 70:
@@ -188,7 +180,6 @@ class AttentionTracker:
             else:
                 gaze_direction = "Center"
 
-            # Gaze history stability
             self.gaze_history.append(gaze_direction)
 
             if len(self.gaze_history) > 15:
@@ -199,8 +190,6 @@ class AttentionTracker:
             gaze_stability = int(
                 (stable_gaze / len(self.gaze_history)) * 100
             ) if len(self.gaze_history) > 0 else 0
-
-            # Movement tracking
 
             if self.previous_face_x is not None:
                 movement = abs(face_center_x - self.previous_face_x)
@@ -239,14 +228,12 @@ class AttentionTracker:
             self.previous_face_x = face_center_x
             self.previous_face_y = face_center_y
 
-            # Draw facial landmarks
             for eye in left_eye:
                 cv2.circle(frame, eye, 2, (0, 255, 0), -1)
 
             for eye in right_eye:
                 cv2.circle(frame, eye, 2, (0, 255, 0), -1)
 
-            # Dynamic engagement states
             if eyes_detected == 0:
                 attention_score = 20
                 engagement = "Low Attention"
@@ -290,7 +277,6 @@ class AttentionTracker:
                 (self.focus_frames / self.total_frames) * 100
             )
 
-        # Blink frequency analysis
         session_time = max(
             1,
             time.time() - self.start_time
@@ -301,18 +287,14 @@ class AttentionTracker:
             2
         )
 
-        # Face distance refinement
         if face_ratio < 0.04 and face_detected:
             attention_score -= 15
             engagement = "Far From Screen"
 
-        # Hyperactivity detection
         if movement_variance > 4000:
             engagement = "Hyperactive"
             emotion = "Restless"
             attention_score -= 20
-
-        # ML behavioral prediction
         if behavior_model is not None:
 
             features = [[
@@ -343,7 +325,6 @@ class AttentionTracker:
                     np.max(probabilities) * 100
                 )
 
-                # Prediction smoothing
                 self.prediction_history.append(engagement)
 
                 if len(self.prediction_history) > 10:
@@ -387,7 +368,6 @@ class AttentionTracker:
             except Exception as e:
                 print("ML Prediction Error:", e)
 
-        # Final dynamic AI refinement
         if not face_detected:
             engagement = "No Face Detected"
             emotion = "Inactive"
@@ -412,7 +392,6 @@ class AttentionTracker:
             engagement = "Very Low Attention"
             emotion = "Inactive"
 
-        # AI confidence estimation
         if behavior_model is None:
             confidence = min(
                 99,
@@ -422,7 +401,6 @@ class AttentionTracker:
         attention_score = max(0, min(100, attention_score))
         confidence = max(0, min(99, confidence))
 
-        # Score history smoothing
         self.score_history.append(attention_score)
 
         if len(self.score_history) > 10:
@@ -433,7 +411,6 @@ class AttentionTracker:
             len(self.score_history)
         )
 
-        # Smooth score transitions
         attention_score = int(
             (0.8 * self.previous_score) +
             (0.2 * attention_score)
@@ -443,7 +420,6 @@ class AttentionTracker:
         attention_score = int(attention_score)
         focus_percentage = int(focus_percentage)
 
-        # AI Therapy Recommendation System
         therapy_result = (
             recommendation_engine.generate_recommendations(
                 {
@@ -506,5 +482,4 @@ class AttentionTracker:
             return "Low engagement and possible distraction"
 
 
-# Singleton tracker instance
 tracker = AttentionTracker()

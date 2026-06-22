@@ -57,13 +57,10 @@ class ProgressTracker:
         today = datetime.now().strftime("%Y-%m-%d")
         current_time = datetime.now().strftime("%H:%M:%S")
 
-        # SESSION COUNT
         data["total_sessions"] += 1
 
-        # TOTAL FOCUS
         data["total_focus_minutes"] += focus_duration
 
-        # AVERAGE ATTENTION
         previous_average = data["average_attention"]
         total_sessions = data["total_sessions"]
 
@@ -75,16 +72,13 @@ class ProgressTracker:
 
         data["average_attention"] = round(new_average, 2)
 
-        # HIGHEST ATTENTION
         if attention_score > data["highest_attention"]:
             data["highest_attention"] = attention_score
 
-        # DAILY STREAK
         if data["last_active_date"] != today:
             data["daily_streak"] += 1
             data["last_active_date"] = today
 
-        # HISTORY LOG
         history_entry = {
             "date": today,
             "time": current_time,
@@ -96,7 +90,6 @@ class ProgressTracker:
 
         data["history"].append(history_entry)
 
-        # FOCUS HISTORY
         data["focus_history"].append(
             {
                 "date": today,
@@ -104,7 +97,6 @@ class ProgressTracker:
             }
         )
 
-        # EMOTION HISTORY
         data["emotion_history"].append(
             {
                 "date": today,
@@ -112,7 +104,6 @@ class ProgressTracker:
             }
         )
 
-        # THERAPY TASKS
         if completed_task:
 
             if completed_task not in data[
@@ -126,13 +117,10 @@ class ProgressTracker:
                 completed_task
             ] += 1
 
-        # BADGES
         self.generate_badges(data)
 
-        # ACHIEVEMENTS
         self.generate_achievements(data)
 
-        # WEEKLY SUMMARY
         weekly_summary = {
             "date": today,
             "attention": attention_score,
@@ -143,7 +131,6 @@ class ProgressTracker:
             weekly_summary
         )
 
-        # LIMIT STORAGE
         data["history"] = data["history"][-200:]
         data["focus_history"] = (
             data["focus_history"][-100:]
@@ -263,6 +250,4 @@ class ProgressTracker:
 
         return dashboard
 
-
-# Global progress tracker instance
 progress_tracker = ProgressTracker()
