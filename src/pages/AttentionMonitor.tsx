@@ -66,7 +66,7 @@ function AttentionMonitor() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch("https://botanical-sneak-jumble.ngrok-free.dev/attention");
+        const response = await fetch("http://localhost:5002/attention");
 
         const data = await response.json();
 

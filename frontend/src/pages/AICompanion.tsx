@@ -138,7 +138,7 @@ export default function AICompanion() {
       setLoadingLesson(true);
 
       const response = await fetch(
-        "https://botanical-sneak-jumble.ngrok-free.dev/generate-lesson",
+        "http://localhost:5002/generate-lesson",
         {
           method: "POST",
           headers: {
@@ -326,7 +326,7 @@ export default function AICompanion() {
       try {
 
         const aiResponse = await fetch(
-          "https://botanical-sneak-jumble.ngrok-free.dev/live-chat",
+          "http://localhost:5002/live-chat",
           {
             method: "POST",
             headers: {

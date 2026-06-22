@@ -98,7 +98,7 @@ export default function AIRecommendations() {
       });
 
       fetch(
-        "https://botanical-sneak-jumble.ngrok-free.dev/live-chat",
+        "http://localhost:5002/live-chat",
         {
           method: "POST",
           headers: {

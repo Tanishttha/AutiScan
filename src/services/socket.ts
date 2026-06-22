@@ -3,7 +3,7 @@
 import { io } from "socket.io-client";
 
 export const socket = io(
-  "https://botanical-sneak-jumble.ngrok-free.dev",
+  "http://localhost:5002",
   {
     transports: ["websocket"],
     autoConnect: true,
