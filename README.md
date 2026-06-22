@@ -38,66 +38,69 @@ https://autismbuddy.vercel.app/
 * Therapy Generation System
 
 ![Project Structure](assets/1.png)
-Installation
+<h2>Installation</h2>
+<h3>Clone Repository</h3>
 
-Clone Repository
-
+```bash
 git clone https://github.com/USERNAME/AutiScan.git
 cd AutiScan
-
-⸻
-
-Backend Setup
-
+```
+<h3>Backend Setup</h3>
 Create Virtual Environment
 
+```bash
 python -m venv venv
-
-Activate Virtual Environment
-
+```
+<h3>Activate Virtual Environment</h3>
 Windows
 
+```bash
 venv\Scripts\activate
-
+```
 macOS/Linux
 
+```bash
 source venv/bin/activate
+```
+<h3>Install Dependencies</h3>
 
-Install Dependencies
-
+```bash
 pip install -r requirements-backend.txt
+```
+<h3>Run Backend</h3>
 
-Run Backend
-
+```bash
 python app.py
+```
+<h3>Backend will start on:</h3>
 
-Backend will start on:
-
+```bash
 http://localhost:5000
+```
 
-⸻
-
-Frontend Setup
-
+<h3>Frontend Setup</h3>
 Navigate to frontend directory:
 
+```bash
 cd frontend
+```
+<h3>Install dependencies:</h3>
 
-Install dependencies:
-
+```bash
 npm install
+```
+<h3>Run development server:</h3>
 
-Run development server:
-
+```bash
 npm run dev
+```
+<h3>Frontend will start on:</h3>
 
-Frontend will start on:
-
+```bash
 http://localhost:5173
+```
 
-⸻
-
-Usage
+<h2>Usage</h2>
 
 1. Launch the backend server.
 2. Start the frontend application.
@@ -106,11 +109,8 @@ Usage
 5. Generate autism behavior predictions.
 6. View therapy recommendations and progress reports.
 
-⸻
-
-Screenshots
-
-Home Page
+<h2>Screenshots</h2>
+<h3>Home Page</h3>
 
 <p align="center">
   <img src="read/homepage.png" width="900">
@@ -130,7 +130,7 @@ Therapy Recommendation System
 
 ⸻
 
-Future Enhancements
+<h2>Future Enhancements</h2>
 
 * Real-time video-based behavioral analysis
 * Deep learning-based prediction models
@@ -138,18 +138,5 @@ Future Enhancements
 * Cloud deployment support
 * Mobile application integration
 * Advanced analytics and reporting
-
-⸻
-
-Author
-
-Tushar Banga
-
-B.Tech Computer Engineering
-J.C. Bose University of Science and Technology, YMCA
-
-⸻
-
-License
-
+<h2>License</h2>
 This project is intended for educational and research purposes.
