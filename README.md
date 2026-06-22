@@ -97,7 +97,7 @@ npm run dev
 <h3>Frontend will start on:</h3>
 
 ```bash
-http://localhost:5173
+http://localhost:8080
 ```
 
 <h2>Usage</h2>
