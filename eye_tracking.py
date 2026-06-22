@@ -99,23 +99,19 @@ class AttentionTracker:
             h = max(0, y2 - y1)
             face_detected = True
 
-            # Face size analysis
             face_area = w * h
             frame_area = frame_w * frame_h
             face_ratio = round(face_area / frame_area, 4)
 
-            # dlib facial landmarks
             rect = dlib.rectangle(x, y, x + w, y + h)
             landmarks = predictor(gray, rect)
 
-            # Left eye points
             left_eye = []
             for n in range(36, 42):
                 px = landmarks.part(n).x
                 py = landmarks.part(n).y
                 left_eye.append((px, py))
 
-            # Right eye points
             right_eye = []
             for n in range(42, 48):
                 px = landmarks.part(n).x
@@ -131,7 +127,6 @@ class AttentionTracker:
 
             distance = abs(face_center_x - frame_center)
 
-            # EAR blink detection
             def eye_aspect_ratio(eye):
                 A = scipy_distance.euclidean(eye[1], eye[5])
                 B = scipy_distance.euclidean(eye[2], eye[4])
@@ -195,7 +190,6 @@ class AttentionTracker:
                 movement = abs(face_center_x - self.previous_face_x)
                 movement = min(movement, 100)
 
-                # Position history tracking
                 self.position_history.append(face_center_x)
 
                 if len(self.position_history) > 20:

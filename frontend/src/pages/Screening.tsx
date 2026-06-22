@@ -49,7 +49,6 @@ const Screening = () => {
 
     setIsSubmitting(true);
 
-    // Calculate result (sum of all A scores)
     const result = Object.values(responses).reduce((sum, val) => sum + val, 0);
 
     const payload = {

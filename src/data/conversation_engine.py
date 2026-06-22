@@ -67,9 +67,6 @@ PRACTICE_RESPONSES = [
 
 
 def generate_greeting():
-    """
-    Generates friendly AI greeting.
-    """
 
     return {
         "message": random.choice(GREETING_MESSAGES),
@@ -81,9 +78,6 @@ def generate_greeting():
 
 
 def get_random_question(level=1):
-    """
-    Returns adaptive question based on difficulty.
-    """
 
     if level <= 1:
         filtered = [
@@ -113,9 +107,7 @@ def get_random_question(level=1):
 
 
 def evaluate_response(user_response, expected_answer):
-    """
-    Evaluates conversational response quality.
-    """
+
 
     user = user_response.lower().strip()
     expected = expected_answer.lower().strip()
@@ -155,9 +147,6 @@ def evaluate_response(user_response, expected_answer):
 
 
 def generate_social_story():
-    """
-    Generates child-friendly AI social story.
-    """
 
     stories = [
         {
@@ -188,9 +177,6 @@ def generate_social_story():
 
 
 def realtime_conversation_metrics():
-    """
-    Simulated realtime communication metrics.
-    """
 
     return {
         "speech_confidence": random.randint(70, 99),

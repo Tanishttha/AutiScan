@@ -10,7 +10,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Default to dark mode
+ 
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
@@ -18,7 +18,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      // Set dark mode as default
       setTheme("dark");
       localStorage.setItem("autiscan-theme", "dark");
     }

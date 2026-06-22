@@ -47,14 +47,7 @@ ENCOURAGEMENTS = [
 
 
 def analyze_emotion(user_data=None):
-    """
-    Simulated emotion analysis engine.
-    Can later be connected to:
-    - webcam emotion AI
-    - voice tone analysis
-    - DeepFace
-    - FER models
-    """
+
 
     detected = random.choice(EMOTIONS)
 
@@ -82,9 +75,7 @@ def analyze_emotion(user_data=None):
 
 
 def adaptive_emotion_support(emotion):
-    """
-    Generates adaptive emotional support.
-    """
+ 
 
     emotion = emotion.lower()
 
@@ -125,9 +116,7 @@ def adaptive_emotion_support(emotion):
 
 
 def realtime_emotion_metrics():
-    """
-    Simulated realtime emotional metrics.
-    """
+
 
     return {
         "attention_level": random.randint(65, 98),

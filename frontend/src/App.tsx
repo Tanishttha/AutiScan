@@ -34,7 +34,7 @@ const App = () => (
             fallback={
               <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-pink-200 via-sky-100 to-purple-200 flex items-center justify-center px-6">
 
-                {/* Floating Background Effects */}
+                { }
                 <div className="absolute inset-0 overflow-hidden">
 
                   <div className="absolute top-10 left-10 w-40 h-40 bg-pink-300/30 rounded-full blur-3xl animate-pulse" />
@@ -53,7 +53,7 @@ const App = () => (
 
                 </div>
 
-                {/* Main Card */}
+                {}
                 <div className="relative z-10 w-full max-w-2xl rounded-[40px] border border-white/40 bg-white/60 backdrop-blur-2xl shadow-2xl p-10 text-center">
 
                   <div className="flex justify-center gap-5 mb-8">
@@ -78,7 +78,7 @@ const App = () => (
                     activities for kids ✨
                   </p>
 
-                  {/* Loading Bar */}
+                  {}
                   <div className="w-full h-5 rounded-full bg-slate-200 overflow-hidden shadow-inner mb-6">
                     <div className="h-full w-2/3 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full animate-pulse" />
                   </div>

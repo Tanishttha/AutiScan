@@ -110,7 +110,6 @@ def generate_ai_lesson(
 
             print("RAW GROQ RESPONSE:", clean_text)
 
-            # Extract first valid JSON object safely
             matches = re.findall(
                 r"\{(?:[^{}]|(?:\{[^{}]*\}))*\}",
                 clean_text,

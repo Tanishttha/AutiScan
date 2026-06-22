@@ -20,9 +20,7 @@ PRACTICE_FEEDBACK = [
 
 
 def split_phonics(word):
-    """
-    Splits word into phonics-like chunks.
-    """
+
 
     clean_word = "".join(
         char for char in word if char.isalpha()
@@ -38,9 +36,7 @@ def split_phonics(word):
 
 
 def pronunciation_score(spoken_text, target_word):
-    """
-    Simple pronunciation similarity scoring.
-    """
+
 
     spoken = spoken_text.lower().strip()
     target = target_word.lower().strip()
@@ -61,9 +57,7 @@ def pronunciation_score(spoken_text, target_word):
 
 
 def analyze_voice(spoken_text, target_word):
-    """
-    Main voice pronunciation analysis engine.
-    """
+
 
     score = pronunciation_score(
         spoken_text,
@@ -103,9 +97,7 @@ def analyze_voice(spoken_text, target_word):
 
 
 def adaptive_difficulty(level):
-    """
-    Adaptive therapy difficulty engine.
-    """
+ 
 
     if level <= 1:
         return {
@@ -133,9 +125,7 @@ def adaptive_difficulty(level):
 
 
 def realtime_voice_metrics():
-    """
-    Simulated realtime speech metrics.
-    """
+
 
     return {
         "speech_confidence": random.randint(70, 98),

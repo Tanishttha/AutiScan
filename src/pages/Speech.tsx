@@ -46,52 +46,35 @@ const similarityScore = (first, second) => {
 
 const normalize = (s) => s.toLowerCase().replace(/[^a-z]/g, "").trim();
 
-/**
- * STRICT matching — user must say the word very accurately.
- * Fixed bugs:
- * 1. No self-matching (transcript === target is checked outside)
- * 2. Stricter thresholds
- * 3. Length difference allowed only ±0 for short words
- */
 const isGoodMatch = (transcript, word) => {
   if (!transcript || !word) return false;
 
   const cleanTranscript = normalize(transcript);
   const cleanWord = normalize(word);
 
-  // Exact match always passes
   if (cleanTranscript === cleanWord) return true;
 
-  // Reject if lengths differ too much
   const lengthDifference = Math.abs(cleanTranscript.length - cleanWord.length);
   const maxAllowedLengthDiff = cleanWord.length <= 4 ? 0 : 1;
   if (lengthDifference > maxAllowedLengthDiff) return false;
 
-  const similarity = similarityScore(cleanTranscript, cleanWord);
-
-  // First letter must match exactly
   if (cleanTranscript.charAt(0) !== cleanWord.charAt(0)) return false;
 
-  // First two letters must match for words > 3 chars
   if (cleanWord.length > 3 && cleanTranscript.slice(0, 2) !== cleanWord.slice(0, 2)) return false;
 
-  // Last two letters must match
   if (cleanTranscript.slice(-2) !== cleanWord.slice(-2)) return false;
 
-  // Missing starting sound check
   if (
     cleanTranscript.length > 2 &&
     cleanWord.length > 2 &&
     cleanTranscript.slice(1) === cleanWord.slice(0, -1)
   ) return false;
 
-  // Vowel pattern must match exactly
   const vowels = ["a", "e", "i", "o", "u"];
   const transcriptVowels = cleanTranscript.split("").filter((c) => vowels.includes(c)).join("");
   const wordVowels = cleanWord.split("").filter((c) => vowels.includes(c)).join("");
   if (transcriptVowels !== wordVowels) return false;
 
-  // Stricter similarity thresholds
   const requiredSimilarity = cleanWord.length >= 6 ? 96 : 93;
   return similarity >= requiredSimilarity;
 };
@@ -109,9 +92,6 @@ const SUPPORT = [
   "🧠 Slow and clear speaking helps learning.",
 ];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-// ─── Word bank for free-speak mode ───────────────────────────────────────────
-// User must say one of these words; we don't auto-assign transcript as target
 const WORD_BANK = [
   "apple", "ball", "cat", "dog", "elephant", "fish", "goat", "hat",
   "igloo", "jump", "kite", "lion", "mango", "nest", "orange", "parrot",
@@ -123,7 +103,6 @@ const WORD_BANK = [
 
 const pickWord = () => WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
 
-// ─── Voice Waveform ──────────────────────────────────────────────────────────
 
 function VoiceWaveform() {
   const canvasRef = useRef(null);
@@ -158,7 +137,6 @@ function VoiceWaveform() {
         };
         draw();
       } catch {
-        // mic not available
       }
     })();
     return () => {
@@ -177,7 +155,6 @@ function VoiceWaveform() {
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Speech() {
   const navigate = useNavigate();
@@ -185,7 +162,7 @@ export default function Speech() {
   const [feedback, setFeedback] = useState("");
   const [status, setStatus] = useState("Starting microphone...");
   const [correct, setCorrect] = useState(null);
-  const [currentWord, setCurrentWord] = useState(() => pickWord()); // Always has a target!
+  const [currentWord, setCurrentWord] = useState(() => pickWord()); 
   const [sessionCorrectCount, setSessionCorrectCount] = useState(0);
   const [practiceTarget, setPracticeTarget] = useState("");
   const [practiceRequired, setPracticeRequired] = useState(5);
@@ -204,7 +181,6 @@ export default function Speech() {
   const [phonicsParts, setPhonicsParts] = useState([]);
   const [currentPhonicIndex, setCurrentPhonicIndex] = useState(0);
 
-  // Refs for stable closures
   const recognitionRef = useRef(null);
   const practiceTargetRef = useRef("");
   const currentWordRef = useRef(currentWord);
@@ -229,7 +205,6 @@ export default function Speech() {
     speechSynthesis.speak(u);
   }, []);
 
-  // Announce the current word on load
   useEffect(() => {
     if (currentWord) {
       setTimeout(() => speak(`Say the word: ${currentWord}`, 0.85, 1.1), 1000);
@@ -269,7 +244,6 @@ export default function Speech() {
     const pt = practiceTargetRef.current;
     const cw = currentWordRef.current;
 
-    // ── PRACTICE MODE ──
     if (pt) {
       const sim = similarityScore(transcript, normalize(pt));
       setAccuracy(sim);
@@ -314,9 +288,6 @@ export default function Speech() {
       }
       return;
     }
-
-    // ── FREE SPEAK MODE: compare against the assigned word ──
-    // BUG FIX: Never use transcript as the target. Always use currentWord.
     if (!cw) return;
 
     const targetWord = normalize(cw);
@@ -338,25 +309,18 @@ export default function Speech() {
       setSessionCorrectCount((p) => p + 1);
       setFeedback(`✅ Perfect! "${cw}" — well said!`);
       speak(`Well done!`, 0.9);
-      // Auto-advance after 2s
       setTimeout(() => loadNextWord(), 2200);
     } else {
-      // Wrong pronunciation — enter practice mode for the ASSIGNED word
       setCorrect(false);
       setCombo(0);
       wrongAttemptsRef.current = wrongAttemptsRef.current + 1;
       setWrongAttempts(wrongAttemptsRef.current);
       setEncouragement(pick(SUPPORT));
 
-      // Only start practice if not already in practice mode
       if (!practiceTargetRef.current) {
-        // Use the ASSIGNED word (cw) as the practice target, NOT the transcript
-        // Optionally, also check Datamuse for the phonetically closest real word
-        // only if transcript is a real-sounding word attempt
-        let practiceWord = cw; // default to assigned word
+        let practiceWord = cw; 
 
-        // If user said something completely different, still practice the assigned word
-        const req = Math.floor(Math.random() * 4) + 4; // 4-7 repetitions
+        const req = Math.floor(Math.random() * 4) + 4; 
         const parts = breakIntoPhonics(normalize(practiceWord));
 
         setPracticeTarget(practiceWord);
@@ -382,7 +346,6 @@ export default function Speech() {
     }
   }, [masterWord, speak, loadNextWord]);
 
-  // Start recognition
   useEffect(() => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
       setStatus("Speech recognition not supported in this browser");
