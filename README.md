@@ -1,13 +1,13 @@
 <h1 align="center">AutiScan</h1>
 <h2 align="center">AutiScan is an AI-powered Autism Spectrum Disorder (ASD) behavioral analysis and therapy assistance platform. The system combines Machine Learning, Computer Vision, and AI-based recommendation techniques to assist in behavioral assessment, therapy generation, and progress tracking.</h2>
+<h2>Live Demo</h2>
 
-Live Demo
-
+```bash
 https://autismbuddy.vercel.app/
+```
 
-⸻
-
-Features
+![System Architecture](assets/2.png)
+<h2>Features</h2>
 
 * Autism behavior prediction using Machine Learning
 * Eye tracking and behavioral analysis
@@ -16,84 +16,28 @@ Features
 * Progress tracking system
 * Interactive web dashboard
 * Real-time prediction and analysis
-
-⸻
-
-Technology Stack
-
-Frontend
+<h2>Technology Stack</h2>
+<h3>Frontend</h3>
 
 * React.js
 * TypeScript
 * Vite
 * Tailwind CSS
-
-Backend
+<h3>Backend</h3>
 
 * Python
 * Flask
 * Scikit-Learn
 * Pandas
 * NumPy
-
-AI & Machine Learning
+<h3>AI & Machine Learning</h3>
 
 * Behavioral Classification Models
 * Recommendation Engine
 * Eye Tracking Module
 * Therapy Generation System
 
-⸻
-
-System Architecture
-
-<p align="center">
-  <img src="read/system_architecture.png" width="900">
-</p>
-
-⸻
-
-Project Structure
-
-AutiScan/
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── contexts/
-│   │   ├── hooks/
-│   │   └── data/
-│   │
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── tsconfig.json
-│
-├── models/
-│   ├── deploy.prototxt
-│   ├── shape_predictor_68_face_landmarks.dat
-│   └── res10_300x300_ssd_iter_140000.caffemodel
-│
-├── app.py
-├── ai_companion_engine.py
-├── ai_therapy_generator.py
-├── recommendation_engine.py
-├── therapy_recommendations.py
-├── eye_tracking.py
-├── progress_tracker.py
-│
-├── behavior_dataset.csv
-├── behavior_model.pkl
-├── best_model.pkl
-├── encoders.pkl
-├── label_encoder.pkl
-│
-└── requirements-backend.txt
-
-⸻
-
+![Project Structure](assets/1.png)
 Installation
 
 Clone Repository
