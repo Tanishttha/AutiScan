@@ -8,3 +8,6 @@ imbalanced-learn
 mediapipe
 opencv-python
 numpy
+firebase-admin
+groq
+Flask-SocketIO
