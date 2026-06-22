@@ -1,4 +1,4 @@
-AutiScan
+<h1 align="center">AutiScan</h1>
 
 AutiScan is an AI-powered Autism Spectrum Disorder (ASD) behavioral analysis and therapy assistance platform. The system combines Machine Learning, Computer Vision, and AI-based recommendation techniques to assist in behavioral assessment, therapy generation, and progress tracking.
 
