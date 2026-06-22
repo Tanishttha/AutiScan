@@ -110,28 +110,16 @@ http://localhost:8080
 6. View therapy recommendations and progress reports.
 
 <h2>Screenshots</h2>
-<h3>Home Page</h3>
 
-<p align="center">
-  <img src="read/homepage.png" width="900">
-</p>
+![Home](assets/3.png)
+<h3 align="center">Home Page</h3>
 
-Prediction Module
+![SS2](assets/4.png)
+<h3 align="center">Speech Therapy</h3>
 
-<p align="center">
-  <img src="read/prediction.png" width="900">
-</p>
-
-Therapy Recommendation System
-
-<p align="center">
-  <img src="read/therapy.png" width="900">
-</p>
-
-⸻
-
+![SS3](assets/5.png)
+<h3 align="center">Emotion Monitoring System</h3>
 <h2>Future Enhancements</h2>
-
 * Real-time video-based behavioral analysis
 * Deep learning-based prediction models
 * Therapist dashboard
