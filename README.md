@@ -120,6 +120,7 @@ http://localhost:8080
 ![SS3](assets/5.png)
 <h3 align="center">Emotion Monitoring System</h3>
 <h2>Future Enhancements</h2>
+
 * Real-time video-based behavioral analysis
 * Deep learning-based prediction models
 * Therapist dashboard
