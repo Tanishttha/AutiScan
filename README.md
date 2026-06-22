@@ -3,7 +3,7 @@
 <h2>Live Demo</h2>
 
 ```bash
-https://autismbuddy.vercel.app/
+https://autismbuddy.vercel.app
 ```
 
 ![System Architecture](assets/2.png)
