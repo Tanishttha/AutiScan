@@ -1,0 +1,5 @@
+*.dat linguist-generated=true
+*.pkl linguist-generated=true
+*.joblib linguist-generated=true
+
+models/* linguist-generated=true
