@@ -1,5 +1,0 @@
-
-*.ts linguist-generated=true
-*.tsx linguist-generated=true
-frontend/** linguist-generated=true
-src/** linguist-generated=true
