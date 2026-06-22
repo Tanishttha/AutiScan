@@ -1,11 +1,35 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
+from flask_socketio import SocketIO, emit
+import eventlet
 import pickle
 import pandas as pd
-import numpy as np 
+import numpy as np
+import cv2
 from flask_cors import CORS
+from eye_tracking import tracker
+from recommendation_engine import generate_recommendations
+from ai_companion_engine import (
+    generate_ai_lesson,
+    generate_live_ai_chat
+)
+from image_generator import generate_learning_image
 
 app = Flask(__name__)
-CORS(app)  # Add this line
+CORS(app)
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading"
+)
+
+# Initialize webcam safely
+camera = cv2.VideoCapture(0)
+
+# Optimize webcam settings
+camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+camera.set(cv2.CAP_PROP_FPS, 30)
 
 
 # --- Load saved model and encoders ---
@@ -44,10 +68,46 @@ categorical_cols = [
 ]
 
 
+# --- REALTIME AI SOCKET EVENTS ---
+@socketio.on("connect")
+def handle_connect():
+    print("Client connected to realtime AI server")
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    print("Client disconnected")
+
+
+@socketio.on("live_analysis")
+def handle_live_analysis(data):
+    try:
+
+        analysis_result = generate_recommendations(data)
+
+        emit(
+            "live_results",
+            analysis_result
+        )
+
+    except Exception as error:
+
+        emit(
+            "live_results",
+            {
+                "status": "error",
+                "message": str(error)
+            }
+        )
+
 # Home route
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return jsonify({
+        "status": "running",
+        "message": "Autism AI Backend Running Successfully",
+        "service": "AI Autism Behavioral & Therapy Assistant"
+    })
 
 # Predict route
 @app.route("/predict", methods=["POST"])
@@ -115,7 +175,184 @@ def predict():
         # Return a generic 500 error to the user with the detail
         return jsonify({"error": f"An internal server error occurred. Detail: {str(e)}"}), 500
 
+
+# --- AI Attention Monitoring Route ---
+@app.route("/attention", methods=["GET"])
+def attention_monitor():
+    try:
+        success, frame = camera.read()
+
+        if not success:
+            return jsonify({
+                "error": "Unable to access webcam"
+            }), 500
+
+        result = tracker.analyze_frame(frame)
+
+        # Enhanced API response
+        enhanced_response = {
+            "status": "success",
+            "system": "AI Autism Behavioral & Therapy Assistant",
+            "version": "2.0",
+            "camera_active": True,
+            "analysis": result,
+            "analytics": {
+                "attention_score": result.get("attention_score", 0),
+                "engagement": result.get("engagement", "Unknown"),
+                "emotion": result.get("emotion", "Unknown"),
+                "gaze_direction": result.get("gaze_direction", "Unknown"),
+                "blink_count": result.get("blink_count", 0),
+                "focus_duration": result.get("focus_duration", 0),
+                "hyperactivity_score": result.get(
+                    "hyperactivity_score", 0
+                )
+            },
+            "therapy": result.get(
+                "therapy_recommendations", {}
+            )
+        }
+
+        return jsonify(enhanced_response)
+
+    except Exception as e:
+        print(f"Attention Monitor Error: {e}")
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+# --- AI Therapy Analysis Route ---
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    try:
+        data = request.get_json() or {}
+
+        analysis_result = generate_recommendations(data)
+
+        response = {
+            "status": "success",
+            "realtime_ai": True,
+            "analysis": analysis_result
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"Analyze Route Error: {e}")
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+# --- AI Conversational Companion Route ---
+# --- AI Conversational Companion Route ---
+@app.route("/generate-lesson", methods=["POST"])
+def generate_lesson():
+    try:
+        data = request.get_json() or {}
+
+        child_name = data.get("child_name", "Friend")
+        confidence = data.get("confidence", 50)
+        interests = data.get("interests", [])
+
+        # ai_companion_engine se dict le rahe hain
+        lesson_data = generate_ai_lesson(
+            child_name=child_name,
+            confidence=confidence,
+            interests=interests
+        )
+
+        # ✨ FIX: Pehle check karenge ki 'lesson' koi dict hai ya string.
+        # Agar dict hai toh .get() chalega, nahi toh directly image generator ko bhejenge ya default 'Apple' use karenge.
+        lesson_content = lesson_data.get("lesson", "")
+        
+        if isinstance(lesson_content, dict):
+            lesson_word = lesson_content.get("word", "Apple")
+        else:
+            # Agar lesson ek string hai (jaise "😊 Hi Friend!..."), toh image generator ke liye default 'Apple' ya koi word set kar dete hain
+            lesson_word = "Apple"
+
+        # Image generate karenge
+        image_data = generate_learning_image(lesson_word)
+
+        response = {
+            "status": "success",
+            "ai_companion": True,
+            "lesson_data": lesson_data,
+            "image": image_data
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"AI Companion Route Error: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+# --- LIVE AI CHAT ROUTE ---
+@app.route("/live-chat", methods=["POST"])
+def live_chat():
+    try:
+        data = request.get_json() or {}
+
+        user_message = data.get("message", "")
+        child_name = data.get("child_name", "Friend")
+
+        ai_response = generate_live_ai_chat(
+            user_message=user_message,
+            child_name=child_name
+        )
+
+        return jsonify({
+            "status": "success",
+            "reply": ai_response.get("reply", "😊 Hello friend!"),
+            "history": ai_response.get("history", [])
+        })
+
+    except Exception as e:
+        print(f"Live Chat Route Error: {e}")
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+# --- Backend Health Check Route ---
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "running",
+        "service": "AI Autism Behavioral & Therapy Assistant",
+        "version": "2.0",
+        "camera_active": camera.isOpened(),
+        "features": [
+            "DNN Face Detection",
+            "dlib Facial Landmarks",
+            "EAR Blink Detection",
+            "Attention Tracking",
+            "Behavioral AI",
+            "Therapy Recommendation Engine",
+            "Progress Scoring",
+            "Achievement System",
+            "AI Therapy Roadmap",
+            "AI Conversational Companion",
+            "Adaptive Speech Learning",
+            "Emotion-Aware AI Lessons",
+            "Dynamic Autism Learning Engine"
+        ]
+    })
+
+
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    try:
+        socketio.run(
+            app,
+            debug=True,
+            host="0.0.0.0",
+            port=5002,
+            allow_unsafe_werkzeug=True
+        )
+    finally:
+        camera.release()
