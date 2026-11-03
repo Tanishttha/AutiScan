@@ -252,14 +252,31 @@ def predictions_to_percent(value):
     return round(max(0.0, min(100.0, value * 100)), 2)
 
 
-@app.route("/attention", methods=["GET"])
+@app.route("/attention", methods=["GET", "POST"])
 def attention_monitor():
     try:
-        frame = get_camera_frame()
+        if request.method == "POST":
+            frame_data = (request.get_json(silent=True) or {}).get("frame", "")
+            if not isinstance(frame_data, str) or not frame_data:
+                return jsonify({"status": "error", "message": "A camera frame is required"}), 400
+
+            import base64
+            import binascii
+
+            encoded_frame = frame_data.split(",", 1)[-1]
+            try:
+                frame_bytes = base64.b64decode(encoded_frame, validate=True)
+            except (binascii.Error, ValueError):
+                return jsonify({"status": "error", "message": "The camera frame is not valid base64 data"}), 400
+            frame = cv2.imdecode(np.frombuffer(frame_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+            if frame is None:
+                return jsonify({"status": "error", "message": "The camera frame could not be decoded"}), 400
+        else:
+            frame = get_camera_frame()
+
         if frame is not None and tracker is not None:
             result = tracker.analyze_frame(frame)
         else:
-            import random
             result = {
                 "attention_score": 10,
                 "engagement": "No Face Detected",
