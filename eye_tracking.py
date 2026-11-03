@@ -6,21 +6,26 @@ import statistics
 from scipy.spatial import distance as scipy_distance
 
 net = None
-try:
-    if os.path.exists("models/deploy.prototxt") and os.path.exists("models/res10_300x300_ssd_iter_140000.caffemodel"):
+model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+face_config = os.path.join(model_dir, "deploy.prototxt")
+face_weights = os.path.join(model_dir, "res10_300x300_ssd_iter_140000.caffemodel")
+if os.path.isfile(face_config) and os.path.isfile(face_weights):
+    try:
         if hasattr(cv2.dnn, "readNetFromCaffe"):
-            net = cv2.dnn.readNetFromCaffe(
-                "models/deploy.prototxt",
-                "models/res10_300x300_ssd_iter_140000.caffemodel"
-            )
+            try:
+                net = cv2.dnn.readNetFromCaffe(face_config, face_weights)
+            except Exception as caffe_error:
+                print(f"Notice: readNetFromCaffe failed; trying OpenCV DNN fallback: {caffe_error}")
+                net = cv2.dnn.readNet(face_weights, face_config, "caffe")
         else:
-            net = cv2.dnn.readNet(
-                "models/res10_300x300_ssd_iter_140000.caffemodel",
-                "models/deploy.prototxt",
-                "caffe"
-            )
-except Exception as e:
-    print(f"Notice: Caffe face detector net not loaded: {e}")
+            net = cv2.dnn.readNet(face_weights, face_config, "caffe")
+    except Exception as e:
+        print(f"Notice: Caffe face detector net not loaded: {e}")
+else:
+    print(
+        "Notice: Caffe face detector model files are missing. "
+        f"Expected {face_config} and {face_weights}."
+    )
 
 face_detector = None
 predictor = None
