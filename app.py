@@ -5,6 +5,7 @@ try:
 except ImportError:
     eventlet = None
 import pickle
+import os
 import pandas as pd
 import numpy as np
 import cv2
@@ -31,6 +32,10 @@ camera = None
 
 def get_camera_frame():
     global camera
+    # In Render, the browser supplies webcam frames through POST /attention.
+    # The server container has no physical /dev/video0 camera to open.
+    if os.environ.get("AUTISCAN_IPC_WORKER") == "1":
+        return None
     try:
         if camera is None:
             camera = cv2.VideoCapture(0)
@@ -468,8 +473,6 @@ def health_check():
 
 
 if __name__ == "__main__":
-    import os
-
     try:
         if os.environ.get("AUTISCAN_IPC_WORKER") == "1":
             import json
