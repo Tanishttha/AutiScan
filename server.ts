@@ -12,7 +12,7 @@ const envMode = process.env.NODE_ENV === "production" ? "production" : "developm
 for (const [key, value] of Object.entries(loadEnv(envMode, __dirname, ""))) {
   if (process.env[key] === undefined) process.env[key] = value;
 }
-
+//
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const isProduction = process.env.NODE_ENV === "production";
@@ -533,7 +533,7 @@ async function startServer() {
     const distPath = path.resolve(__dirname, "dist");
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get("*", (_req: Request, res: Response) => {
+      app.get("/{*path}", (_req: Request, res: Response) => {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     } else {
