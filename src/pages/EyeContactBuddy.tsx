@@ -101,9 +101,24 @@ export default function EyeContactBuddy() {
     }
 
     let active = true;
+    let pollInFlight = false;
     const pollFaceStatus = async () => {
+      if (pollInFlight) return;
+
+      const video = videoRef.current;
+      if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = canvas.toDataURL("image/jpeg", 0.65);
+
+      pollInFlight = true;
       try {
-        const data = await api.getAttention();
+        const data = await api.getAttention(frame);
         if (!active) return;
 
         const analysis = (data as any)?.analysis ?? {};
@@ -153,6 +168,8 @@ export default function EyeContactBuddy() {
             toast.info("Eye contact paused while the face is not visible.");
           }
         }
+      } finally {
+        pollInFlight = false;
       }
     };
 
