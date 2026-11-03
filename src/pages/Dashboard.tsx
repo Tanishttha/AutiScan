@@ -1,332 +1,308 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   Brain,
   Mic,
-  LogOut,
-  Moon,
-  Sun,
   Eye,
-  Activity,
   Sparkles,
+  CalendarCheck,
   BarChart3,
+  ArrowRight,
+  Heart,
+  Smile,
+  ShieldCheck,
+  Flame,
+  Award,
+  Volume2,
+  CheckCircle2,
+  Activity
 } from "lucide-react";
-import { toast } from "sonner";
-
 import { auth } from "@/config/firebase";
-import { useTheme } from "@/contexts/ThemeContext";
+import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+
+const features = [
+  {
+    id: "screening",
+    icon: Brain,
+    title: "Clinical ASD Screening",
+    description: "Standardized AQ-10 screening assessment with instant clinical scoring and strength profiling.",
+    path: "/screening",
+    tag: "Assessment",
+    color: "text-blue-600 dark:text-sky-400",
+    bg: "bg-blue-50 dark:bg-blue-950/60",
+    border: "border-blue-200/50 dark:border-blue-900/50",
+    badge: "Clinical Tool"
+  },
+  {
+    id: "speech",
+    icon: Mic,
+    title: "Speech Therapy Lab",
+    description: "Interactive voice analyzer with phonics breakdown, slow-tempo audio guides, and pronunciation scores.",
+    path: "/speech",
+    tag: "Interactive Lab",
+    color: "text-purple-600 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-950/60",
+    border: "border-purple-200/50 dark:border-purple-900/50",
+    badge: "Real-time Voice"
+  },
+  {
+    id: "attention",
+    icon: Eye,
+    title: "Attention & Gaze Monitor",
+    description: "Gentle eye-tracking using your webcam with live focus percentage, stability gauges, and PDF reports.",
+    path: "/attention",
+    tag: "Focus Vision",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bg: "bg-indigo-50 dark:bg-indigo-950/60",
+    border: "border-indigo-200/50 dark:border-indigo-900/50",
+    badge: "Webcam Care"
+  },
+  {
+    id: "companion",
+    icon: Sparkles,
+    title: "Joyful AI Companion",
+    description: "Expressive animated learning buddy who tells friendly adventure stories and cheers on children's progress.",
+    path: "/ai-companion",
+    tag: "Child Buddy",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/60",
+    border: "border-emerald-200/50 dark:border-emerald-900/50",
+    badge: "Joyful AI"
+  },
+  {
+    id: "therapy",
+    icon: CalendarCheck,
+    title: "Personalized Therapy Plan",
+    description: "AI-guided 4-week developmental roadmap focusing on communication, memory, focus, and social skills.",
+    path: "/therapy",
+    tag: "Care Roadmap",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/60",
+    border: "border-amber-200/50 dark:border-amber-900/50",
+    badge: "Structured"
+  },
+];
+
+const childGames = [
+  {
+    id: "eye-buddy",
+    emoji: "🐻",
+    title: "Eye-Contact Buddy",
+    description: "Look into Barnaby the Bear's eyes! He dances & claps when you make brave eye contact.",
+    path: "/eye-contact-buddy",
+    accent: "from-amber-400 to-orange-500",
+    badge: "Gaze Focus"
+  },
+  {
+    id: "story-maker",
+    emoji: "📖",
+    title: "Magic Story Maker",
+    description: "Speak your prompt, make your child the hero, and listen to illustrated AI voice stories.",
+    path: "/story-maker",
+    accent: "from-purple-500 to-indigo-600",
+    badge: "Creative AI"
+  },
+  {
+    id: "calm-monster",
+    emoji: "🐉",
+    title: "Calm Monster",
+    description: "Keep Puff sleeping with peaceful stillness, and practice balloon breathing self-regulation.",
+    path: "/calm-monster",
+    accent: "from-teal-400 to-emerald-500",
+    badge: "Sensory Calm"
+  },
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
-  const [userEmail, setUserEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("Friend");
 
   useEffect(() => {
+    const isGuest = localStorage.getItem("autiscan-guest");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUserEmail(user.email || "User");
+        setUserName(user.displayName || user.email?.split("@")[0] || "Friend");
+      } else if (isGuest) {
+        setUserName("Guest Explorer");
       } else {
-        navigate("/auth");
+        // Allow browsing as friend
+        setUserName("Champion");
       }
     });
     return () => unsubscribe();
   }, [navigate]);
 
-  const features = [
-    {
-      icon: Mic,
-      title: "Speech Pronunciation Checker",
-      description:
-        "Live speech recognition with pronunciation correction and voice feedback",
-      path: "/speech",
-      gradient: "from-pink-500 via-purple-500 to-cyan-500",
-    },
-    {
-      icon: Brain,
-      title: "ASD Screening",
-      description: "Take a comprehensive autism screening assessment",
-      path: "/screening",
-      gradient: "from-primary to-accent",
-    },
-    {
-      icon: Eye,
-      title: "Attention Monitor",
-      description:
-        "Eye tracking, AI therapy guidance & behavioral monitoring",
-      path: "/attention",
-      gradient: "from-purple-500 via-pink-500 to-cyan-500",
-    },
-    {
-      icon: Sparkles,
-      title: "AI Therapy Dashboard",
-      description:
-        "Personalized autism therapy roadmap and AI guidance",
-      path: "/therapy",
-      gradient: "from-cyan-500 to-blue-600",
-    },
-    
-    {
-      icon: BarChart3,
-      title: "Progress Analytics",
-      description:
-        "Track achievements, attention growth & therapy progress",
-      path: "/analytics",
-      gradient: "from-yellow-400 to-orange-500",
-    },
-    {
-      icon: Activity,
-      title: "AI Recommendations",
-      description:
-        "Gemini AI-powered personalized therapy suggestions",
-      path: "/recommendations",
-      gradient: "from-indigo-500 to-purple-600",
-    },
-  ];
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast.success("Logged out successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error("Failed to logout");
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Brain className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold">AutiScan</h1>
+    <AppShell>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+        
+        {/* Welcome Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-black/[0.04] dark:border-white/[0.06]">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card text-xs font-semibold text-blue-600 dark:text-sky-400 mb-3 border border-blue-200/50 dark:border-blue-900/40">
+              <Smile className="w-3.5 h-3.5" />
+              <span>Sensory-Friendly Space</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Hello, {userName}! 🌟
+            </h1>
+            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+              Welcome to your calm therapy hub. Practice speaking, track attention comfortably, and explore gentle learning activities designed for neurodivergent minds.
+            </p>
           </div>
+
           <div className="flex items-center gap-3">
-
-  <button
-    onClick={() => navigate("/ai-companion")}
-    className="group relative flex items-center gap-4 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 text-white px-6 py-3 shadow-[0_15px_40px_rgba(236,72,153,0.35)] hover:scale-105 transition-all duration-300 border border-white/20 overflow-hidden"
-  >
-
-    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 blur-2xl opacity-40 animate-pulse" />
-
-    <div className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md text-2xl animate-bounce shadow-lg">
-      🤖
-    </div>
-
-    <div className="relative z-10 hidden md:flex flex-col items-start leading-tight">
-
-      <span className="text-xs font-bold uppercase tracking-wider opacity-80">
-        AI Buddy
-      </span>
-
-      <span className="text-sm lg:text-base font-black">
-        Chat Companion
-      </span>
-
-    </div>
-
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-white animate-ping" />
-
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-white" />
-
-  </button>
- <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="rounded-full"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              className="rounded-full"
+              onClick={() => navigate("/ai-companion")}
+              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2"
             >
-              <LogOut className="h-5 w-5" />
+              <Sparkles className="w-4 h-4" />
+              <span>Launch AI Buddy</span>
             </Button>
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in">
-          <h2 className="text-3xl font-bold mb-2">
-            Hi, {userEmail.split('@')[0]} 👋
-          </h2>
-          <p className="text-muted-foreground">
-            Continue your AI-powered autism support and therapy journey
-          </p>
+        {/* Child-Favorite Games & Sensory Activities */}
+        <div className="my-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 mb-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Interactive Learning Adventures</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                Child-Favorite Games & Sensory Activities 🎮
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Joyful computer vision and AI adventures designed specifically for children
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  {childGames.map((game) => (
+    <div
+      key={game.id}
+      onClick={() => navigate(game.path)}
+      className="group w-full min-w-0 h-full p-6 rounded-[28px] glass-panel glass-card-hover cursor-pointer flex flex-col justify-between items-start border border-black/[0.06] dark:border-white/[0.08] relative overflow-hidden"
+    >
+      <div className="w-full">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <span className="text-4xl group-hover:scale-115 transition-transform duration-300">
+            {game.emoji}
+          </span>
+
+          <span className="ml-auto self-start text-[10px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 bg-black/[0.03] dark:bg-white/[0.06] px-2 py-0.5 rounded-full border border-black/[0.04] dark:border-white/[0.06] whitespace-nowrap">
+            {game.badge}
+          </span>
         </div>
 
-        {/* Speech Pronunciation Banner */}
-        <div
-          onClick={() => navigate("/speech")}
-          className="mb-10 relative overflow-hidden rounded-[40px] bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 p-8 md:p-10 shadow-2xl cursor-pointer hover:scale-[1.01] hover:shadow-[0_20px_60px_rgba(168,85,247,0.4)] transition-all duration-300"
-        >
+        <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
+          {game.title}
+        </h3>
 
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          {game.description}
+        </p>
+      </div>
 
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+      <div className="mt-5 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] w-full flex items-center justify-between text-xs font-bold text-blue-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform">
+        <span>Play Game</span>
+        <ArrowRight className="w-3.5 h-3.5" />
+      </div>
+    </div>
+  ))}
+</div>
+        </div>
 
-            <div className="max-w-3xl text-white">
-
-              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/20 backdrop-blur-md mb-6 border border-white/20">
-                <span className="text-2xl">🎤</span>
-                <span className="font-bold tracking-wide">
-                  Real-Time Speech AI
-                </span>
-              </div>
-
-              <h2 className="text-3xl md:text-5xl font-extrabold leading-tight mb-6">
-                Speech Pronunciation Checker
+        {/* Feature Modules Grid */}
+        <div className="my-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                Core Therapy Modules
               </h2>
-
-              <p className="text-lg md:text-xl text-white/90 leading-relaxed font-medium">
-                Live microphone listening, pronunciation correction,
-                speech recognition, voice feedback and real-time word analysis.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Select an interactive area to begin today's guided session
               </p>
-
             </div>
+          </div>
 
-            <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 p-6 text-white shadow-xl min-w-[240px] text-center">
-              <div className="text-6xl mb-4">🗣</div>
-              <div className="text-xl font-bold opacity-90">
-                AI Voice Recognition
-              </div>
-              <div className="text-4xl font-extrabold mt-3">
-                LIVE
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.id}
+                  onClick={() => navigate(feature.path)}
+                  className="group p-6 sm:p-7 rounded-[28px] glass-card glass-card-hover cursor-pointer flex flex-col justify-between border border-black/[0.06] dark:border-white/[0.08]"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-13 h-13 p-3 rounded-2xl ${feature.bg} ${feature.border} border flex items-center justify-center ${feature.color} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className="text-[11px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 bg-black/[0.03] dark:bg-white/[0.06] px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.06]">
+                        {feature.badge}
+                      </span>
+                    </div>
 
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
+                      {feature.title}
+                    </h3>
+                    
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      {feature.tag}
+                    </span>
+                    <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform">
+                      <span>Open Tool</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              className="border-border/50 bg-card/90 backdrop-blur-sm shadow-soft hover:shadow-glow hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 cursor-pointer group animate-scale-in rounded-[30px] overflow-hidden"
-              style={{ animationDelay: `${index * 0.1}s` }}
-              onClick={() => navigate(feature.path)}
-            >
-              <CardHeader>
-                <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-xl`}>
-                  <feature.icon className="h-7 w-7 text-white" />
-                </div>
-                <CardTitle className="text-xl">{feature.title}</CardTitle>
-                <CardDescription className="text-base">
-                  {feature.description}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-
-        {/* Featured AI Therapy Banner */}
-        <div
-          className="mt-16 relative overflow-hidden rounded-[40px] bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-500 p-6 md:p-10 shadow-2xl cursor-pointer transition-all duration-500 animate-fade-in"
-          onClick={() => navigate("/attention")}
-        >
-
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-
-          <div className="relative z-10 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-12">
-
-            <div className="max-w-2xl text-white">
-
-              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/20 backdrop-blur-md mb-6 border border-white/20">
-                <span className="text-2xl">🧠</span>
-                <span className="font-bold tracking-wide">
-                  AI Autism Therapy Assistant
-                </span>
-              </div>
-
-              <h2 className="text-3xl md:text-5xl xl:text-6xl font-extrabold leading-tight mb-6 text-white max-w-4xl">
-                Smart Behavioral AI & Therapy Dashboard
-              </h2>
-
-              <p className="text-base md:text-xl text-white/90 leading-relaxed mb-8 font-medium max-w-4xl">
-                Live eye tracking, AI therapy guidance, emotion analysis,
-                personalized activities, progress tracking, rewards,
-                achievements and behavioral intelligence for kids.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-
-                <div className="px-5 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 font-bold text-white">
-                  👁 Eye Tracking
-                </div>
-
-                <div className="px-5 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 font-bold text-white">
-                  🤖 Gemini AI
-                </div>
-
-                <div className="px-5 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 font-bold text-white">
-                  🏆 Rewards System
-                </div>
-
-                <div className="px-5 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 font-bold text-white">
-                  📈 Progress Analytics
-                </div>
-
-              </div>
+        {/* Daily Guided Activity Banner */}
+        <div className="mt-12 p-6 sm:p-8 rounded-[32px] glass-panel bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-sky-500/10 border border-blue-200/50 dark:border-blue-900/40 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-3xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+              <Sparkles className="w-8 h-8" />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-5 w-full xl:w-auto xl:min-w-[320px]">
-
-              <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 p-5 text-white shadow-xl">
-                <div className="text-5xl mb-3">🎯</div>
-                <div className="text-lg font-semibold opacity-90">
-                  Live Attention Score
-                </div>
-                <div className="text-5xl font-extrabold mt-2">
-                  94%
-                </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-sky-400">
+                Recommended Daily Session
               </div>
-
-              <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 p-5 text-white shadow-xl">
-                <div className="text-5xl mb-3">🏆</div>
-                <div className="text-lg font-semibold opacity-90">
-                  AI Therapy Activities
-                </div>
-                <div className="text-3xl font-extrabold mt-2">
-                  24 Tasks
-                </div>
-              </div>
-
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-1">
+                5-Minute Joyful Speech & Focus Warmup
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-xl">
+                Practice 3 friendly words with your AI Companion and complete a 2-minute eye-contact focus exercise.
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="mt-8 flex flex-wrap gap-4 justify-center">
           <Button
-            variant="outline"
-            onClick={() => navigate("/about")}
-            className="rounded-2xl px-6 py-5 text-base font-semibold hover:bg-primary hover:text-white transition-all duration-300"
+            onClick={() => navigate("/speech")}
+            size="lg"
+            className="w-full md:w-auto px-6 py-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/25 active:scale-95 transition-all shrink-0"
           >
-            About Autism
+            Start Today's Activity
           </Button>
         </div>
-      </main>
-    </div>
+
+      </div>
+    </AppShell>
   );
 };
 

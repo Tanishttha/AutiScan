@@ -1,131 +1,102 @@
-<h1 align="center">AutiScan</h1>
-<h2 align="center">AutiScan is an AI-powered Autism Spectrum Disorder (ASD) behavioral analysis and therapy assistance platform. The system combines Machine Learning, Computer Vision, and AI-based recommendation techniques to assist in behavioral assessment, therapy generation, and progress tracking.</h2>
-<h2>Live Demo</h2>
+# AutiScan - Digital Autism Screening & Therapeutic Support Platform
 
-```bash
-https://autismbuddy.vercel.app
-```
+AutiScan is a sensory-friendly, Apple-grade digital platform designed for children on the autism spectrum, parents, and therapists. It features standardized ASD screening (AQ-10), speech therapy, real-time attention tracking, and 4 interactive games.
 
-![System Architecture](assets/2.png)
-<h2>Features</h2>
+---
 
-* Autism behavior prediction using Machine Learning
-* Eye tracking and behavioral analysis
-* AI-powered therapy recommendation generation
-* Personalized therapy suggestions
-* Progress tracking system
-* Interactive web dashboard
-* Real-time prediction and analysis
-<h2>Technology Stack</h2>
-<h3>Frontend</h3>
+## 🚀 How to Run in VS Code (Step-by-Step)
 
-* React.js
-* TypeScript
-* Vite
-* Tailwind CSS
-<h3>Backend</h3>
+### Prerequisites
+1. **Node.js** (v18, v20, or v22) installed on your computer. Download from [nodejs.org](https://nodejs.org).
+2. **VS Code** (Visual Studio Code).
 
-* Python
-* Flask
-* Scikit-Learn
-* Pandas
-* NumPy
-<h3>AI & Machine Learning</h3>
+---
 
-* Behavioral Classification Models
-* Recommendation Engine
-* Eye Tracking Module
-* Therapy Generation System
+### Step 1: Open the Project in VS Code
+1. Open VS Code.
+2. Click **File** ➔ **Open Folder...** (or press `Ctrl + K, Ctrl + O` on Windows / `Cmd + O` on Mac).
+3. Select this `AutiScan` project root folder.
 
-![Project Structure](assets/1.png)
-<h2>Installation</h2>
-<h3>Clone Repository</h3>
+---
 
-```bash
-git clone https://github.com/USERNAME/AutiScan.git
-cd AutiScan
-```
-<h3>Backend Setup</h3>
-Create Virtual Environment
+### Step 2: Open Terminal in VS Code
+- Press `` Ctrl + ` `` (Backtick) or go to top menu: **Terminal** ➔ **New Terminal**.
 
-```bash
-python -m venv venv
-```
-<h3>Activate Virtual Environment</h3>
-Windows
+---
 
-```bash
-venv\Scripts\activate
-```
-macOS/Linux
-
-```bash
-source venv/bin/activate
-```
-<h3>Install Dependencies</h3>
-
-```bash
-pip install -r requirements-backend.txt
-```
-<h3>Run Backend</h3>
-
-```bash
-python app.py
-```
-<h3>Backend will start on:</h3>
-
-```bash
-http://localhost:5002
-```
-
-<h3>Frontend Setup</h3>
-Navigate to frontend directory:
-
-```bash
-cd frontend
-```
-<h3>Install dependencies:</h3>
+### Step 3: Install Dependencies
+Run the following command in the terminal to install all required packages:
 
 ```bash
 npm install
 ```
-<h3>Run development server:</h3>
+
+---
+
+### Step 4: Start the Development Server
+Install the Python backend dependencies once:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate       # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Then start the full app:
 
 ```bash
 npm run dev
 ```
-<h3>Frontend will start on:</h3>
 
-```bash
-http://localhost:8080
+You will see output like:
+```text
+  VITE v5.4.19  ready in 320 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://0.0.0.0:3000/
 ```
 
-<h2>Usage</h2>
+Open `http://localhost:3000`. Express serves the frontend and Python API on the same port. Python routes communicate with Express over local process input/output, so there is no separate backend network port.
 
-1. Launch the backend server.
-2. Start the frontend application.
-3. Open the frontend URL in your browser.
-4. Enter behavioral information and assessment data.
-5. Generate autism behavior predictions.
-6. View therapy recommendations and progress reports.
+---
 
-<h2>Screenshots</h2>
+### 📦 Production / Render
 
-![Home](assets/3.png)
-<h3 align="center">Home Page</h3>
+Render is configured as one Docker web service. The image installs Node and Python, installs both dependency sets, builds the frontend, and starts Express on Render's assigned `PORT`. Express serves the UI and forwards `/api/*` to the Python worker over local IPC, so no second public service or port is needed.
 
-![SS2](assets/4.png)
-<h3 align="center">Speech Therapy</h3>
+1. Push this repository to GitHub and create a Render Blueprint from `render.yaml`.
+2. Add `GROQ_API_KEY` when Render prompts for the secret (or add it under the service's Environment settings).
+3. Deploy. Render checks `/health`; the app will be served from the assigned `onrender.com` URL.
 
-![SS3](assets/5.png)
-<h3 align="center">Emotion Monitoring System</h3>
-<h2>Future Enhancements</h2>
+The Blueprint uses Render's paid Standard compute plan because Node plus the Python ML dependencies need more memory than the Free plan's 512 MB. Render Free web services also spin down after 15 minutes idle. [Render compute plans](https://render.com/docs/compute-plans) · [Free service limits](https://render.com/docs/free).
 
-* Real-time video-based behavioral analysis
-* Deep learning-based prediction models
-* Therapist dashboard
-* Cloud deployment support
-* Mobile application integration
-* Advanced analytics and reporting
-<h2>License</h2>
-This project is intended for educational and research purposes.
+For a local production-mode run:
+
+```bash
+# 1. Build the frontend
+npm run build
+
+# 2. Start the production Express server
+npm start
+```
+Open `http://localhost:3000` in your browser.
+
+---
+
+## 🎮 Key Features & Routes
+
+| Feature | Route | Description |
+|---|---|---|
+| **Dashboard** | `/dashboard` | Central therapy hub & streak tracking |
+| **Emotion Mirror Game 🎭** | `/emotion-mirror` | Facial affect mimicry & confetti rewards |
+| **Eye-Contact Buddy 🐻** | `/eye-contact-buddy` | Animated character reacting to direct gaze |
+| **Magic Story Maker 📖** | `/story-maker` | Illustrated audio storybooks starring the child |
+| **Calm Monster 🐉** | `/calm-monster` | Stillness dragon & guided balloon breathing |
+| **Speech Therapy Lab** | `/speech` | Slow-tempo phonics & voice recognition |
+| **ASD Screening** | `/screening` | Standardized AQ-10 assessment & profiling |
+| **Attention Focus** | `/attention` | Webcam gaze tracking & PDF report export |
+| **Therapy Plan** | `/therapy` | 4-Week developmental roadmap |
+| **Progress Analytics** | `/analytics` | Weekly attention curves & earned trophies |
+
+---
+

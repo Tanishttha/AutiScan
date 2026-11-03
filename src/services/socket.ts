@@ -1,26 +1,19 @@
-
-
 import { io } from "socket.io-client";
 
-export const socket = io(
-  "http://localhost:5002",
-  {
-    transports: ["websocket"],
-    autoConnect: true,
-    reconnection: true,
-    reconnectionAttempts: 10,
-    reconnectionDelay: 1000
-  }
-);
+const socketUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
-socket.on("connect", () => {
-  console.log(
-    "⚡ Connected to realtime AI therapy server"
-  );
+export const socket = io(socketUrl, {
+  transports: ["websocket", "polling"],
+  autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: 3,
+  reconnectionDelay: 2000,
 });
 
-socket.on("disconnect", () => {
-  console.log(
-    "❌ Disconnected from realtime AI server"
-  );
+socket.on("connect", () => {
+  console.log("⚡ Connected to realtime AI therapy socket");
+});
+
+socket.on("connect_error", () => {
+  // Silent fallback to client-side therapy engine
 });

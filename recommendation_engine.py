@@ -274,8 +274,92 @@ class RecommendationEngine:
             "weekly_roadmap", []
         )
 
-        if dynamic_roadmap:
-            roadmap = dynamic_roadmap
+        if isinstance(dynamic_roadmap, list) and dynamic_roadmap:
+            normalized_dynamic_roadmap = []
+            for index, week_plan in enumerate(dynamic_roadmap[:7]):
+                if not isinstance(week_plan, dict):
+                    normalized_dynamic_roadmap.append({
+                        "day": f"Week {index + 1}",
+                        "focus": "Gentle developmental support",
+                        "task": "Continue with calm, positive practice and guided repetition.",
+                        "tasks": [
+                            {
+                                "title": "Warm-up activity",
+                                "description": "Begin with a calm guided routine to build confidence.",
+                                "minutes": 5,
+                            },
+                            {
+                                "title": "Core therapy practice",
+                                "description": "Continue with focused support for communication or attention goals.",
+                                "minutes": 7,
+                            },
+                            {
+                                "title": "Confidence review",
+                                "description": "Celebrate the progress made and repeat the strongest step gently.",
+                                "minutes": 4,
+                            },
+                        ],
+                    })
+                    continue
+
+                focus = week_plan.get("focus") or week_plan.get("title") or f"Week {index + 1} support"
+                task_text = week_plan.get("task") or week_plan.get("description") or "Continue with calm, positive practice and guided repetition."
+
+                if isinstance(week_plan.get("tasks"), list) and week_plan["tasks"]:
+                    normalized_week = {**week_plan, "day": week_plan.get("day") or f"Week {index + 1}", "focus": focus, "task": task_text}
+                else:
+                    normalized_week = {
+                        **week_plan,
+                        "day": week_plan.get("day") or f"Week {index + 1}",
+                        "focus": focus,
+                        "task": task_text,
+                        "tasks": [
+                            {
+                                "title": f"{focus} Warm-Up",
+                                "description": f"Start with a short, calm {focus.lower()} exercise to build readiness and connection.",
+                                "minutes": 5,
+                            },
+                            {
+                                "title": focus,
+                                "description": task_text,
+                                "minutes": 7,
+                            },
+                            {
+                                "title": "Confidence Review",
+                                "description": "Celebrate progress gently and repeat the strongest step to keep momentum positive.",
+                                "minutes": 4,
+                            },
+                        ],
+                    }
+                normalized_dynamic_roadmap.append(normalized_week)
+
+            roadmap = normalized_dynamic_roadmap
+            if len(roadmap) < 7:
+                roadmap = roadmap + [
+                    {
+                        "day": f"Week {len(roadmap) + 1}",
+                        "focus": "Gentle developmental support",
+                        "task": "Continue with calm, positive practice and guided repetition.",
+                        "tasks": [
+                            {
+                                "title": "Warm-up activity",
+                                "description": "Begin with a calm guided routine to build confidence.",
+                                "minutes": 5,
+                            },
+                            {
+                                "title": "Core therapy practice",
+                                "description": "Continue with focused support for communication or attention goals.",
+                                "minutes": 7,
+                            },
+                            {
+                                "title": "Confidence review",
+                                "description": "Celebrate the progress made and repeat the strongest step gently.",
+                                "minutes": 4,
+                            },
+                        ],
+                    }
+                    for _ in range(7 - len(roadmap))
+                ]
 
         ai_recommendations = ai_generated_plan.get(
             "therapy_recommendations", []

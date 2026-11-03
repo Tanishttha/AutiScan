@@ -1,3 +1,5 @@
+import type { SpeechRecognitionEvent } from "@/types/speech";
+
 export interface SpeechResult {
   transcript: string;
   isCorrect: boolean;
@@ -201,8 +203,8 @@ export const startSpeechRecognition = (
 ) => {
 
   const SpeechRecognition =
-    (window as any).SpeechRecognition ||
-    (window as any).webkitSpeechRecognition;
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
     alert(
@@ -229,7 +231,7 @@ export const startSpeechRecognition = (
     onListeningChange?.(false);
   };
 
-  recognition.onresult = (event: any) => {
+  recognition.onresult = (event: SpeechRecognitionEvent) => {
 
     const spokenText =
       event.results[0][0].transcript;

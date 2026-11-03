@@ -1,336 +1,332 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  BarChart3,
+  Award,
+  Flame,
+  Star,
+  Eye,
+  Mic,
+  CalendarCheck,
+  ArrowLeft,
+  Smile,
+  ShieldCheck,
+  TrendingUp,
+  Clock,
+  Sparkles
+} from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import { Button } from "@/components/ui/button";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from "recharts";
 
-const weeklyProgress = [
-  { day: "Mon", score: 72 },
-  { day: "Tue", score: 80 },
-  { day: "Wed", score: 76 },
-  { day: "Thu", score: 88 },
-  { day: "Fri", score: 92 },
-  { day: "Sat", score: 95 },
-  { day: "Sun", score: 90 },
+const WEEKLY_DATA = [
+  { day: "Mon", focus: 75, speech: 12 },
+  { day: "Tue", focus: 82, speech: 18 },
+  { day: "Wed", focus: 78, speech: 14 },
+  { day: "Thu", focus: 88, speech: 22 },
+  { day: "Fri", focus: 92, speech: 26 },
+  { day: "Sat", focus: 95, speech: 30 },
+  { day: "Sun", focus: 90, speech: 24 },
 ];
 
-const achievements = [
+const ACHIEVEMENTS = [
   {
+    id: "focus",
     emoji: "🏆",
     title: "Focus Master",
-    description: "Reached 95% attention score",
-    color: "from-yellow-400 to-orange-500",
+    description: "Reached 95% sustained gaze stability in attention sessions.",
+    date: "Achieved Yesterday",
+    unlocked: true,
   },
   {
+    id: "streak",
     emoji: "🔥",
     title: "Consistency Hero",
-    description: "7-day therapy streak completed",
-    color: "from-pink-500 to-rose-500",
+    description: "Maintained a joyful 7-day therapy practice streak.",
+    date: "Active Streak",
+    unlocked: true,
   },
   {
+    id: "speech",
+    emoji: "🌟",
+    title: "Pronunciation Star",
+    description: "Spoke 20+ words with over 80% phonics match.",
+    date: "Achieved 3 days ago",
+    unlocked: true,
+  },
+  {
+    id: "memory",
     emoji: "🧠",
     title: "Memory Champion",
-    description: "Completed advanced memory tasks",
-    color: "from-purple-500 to-indigo-600",
+    description: "Solved pattern matching and sequence puzzles in week 3.",
+    date: "Unlocked",
+    unlocked: true,
   },
   {
-    emoji: "🎯",
-    title: "Attention Pro",
-    description: "Maintained stable eye contact",
-    color: "from-cyan-500 to-blue-600",
-  },
-];
-
-const analyticsCards = [
-  {
-    title: "Average Attention",
-    value: "91%",
-    emoji: "👁",
-    color: "from-cyan-500 to-blue-600",
+    id: "buddy",
+    emoji: "🤝",
+    title: "Adventure Explorer",
+    description: "Completed the Jungle and Space story missions with Buddy.",
+    date: "Unlocked",
+    unlocked: true,
   },
   {
-    title: "Therapy Completion",
-    value: "84%",
-    emoji: "🧠",
-    color: "from-purple-500 to-indigo-600",
-  },
-  {
-    title: "Daily Streak",
-    value: "14 Days",
-    emoji: "🔥",
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    title: "Activities Done",
-    value: "126",
-    emoji: "🏆",
-    color: "from-yellow-400 to-orange-500",
+    id: "calm",
+    emoji: "🌈",
+    title: "Sensory Calmness",
+    description: "Practiced 4-second balloon breathing exercises calmly.",
+    date: "In Progress",
+    unlocked: false,
   },
 ];
 
 export default function ProgressAnalytics() {
-
   const navigate = useNavigate();
+  const [metricTab, setMetricTab] = useState<"focus" | "speech">("focus");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-blue-50 to-purple-100 p-6 md:p-10 overflow-hidden">
-
-      <div className="max-w-7xl mx-auto">
-
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-12">
-
-          <div>
-            <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-700 via-pink-600 to-cyan-600 bg-clip-text text-transparent mb-4 leading-tight">
-              📈 Progress Analytics Dashboard
-            </h1>
-
-            <p className="text-lg md:text-xl text-gray-600 font-medium max-w-4xl leading-relaxed">
-              Track therapy improvement, attention stability,
-              AI-generated insights, achievements,
-              focus performance and behavioral growth analytics.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate("/")}
-            className="px-7 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-2xl hover:scale-105 transition-all duration-300"
-          >
-            ← Back to Dashboard
-          </button>
-
-        </div>
-
-        {/* Hero Banner */}
-        <div className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-purple-600 via-pink-500 to-cyan-500 p-8 md:p-12 shadow-2xl mb-12">
-
-          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-
-          <div className="relative z-10 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
-
-            <div className="max-w-4xl text-white">
-
-              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/20 backdrop-blur-md mb-6 border border-white/20">
-                <span className="text-2xl">✨</span>
-                <span className="font-bold tracking-wide">
-                  AI Behavioral Intelligence System
-                </span>
-              </div>
-
-              <h2 className="text-3xl md:text-5xl font-extrabold leading-tight mb-6">
-                Smart Autism Therapy Performance Tracking
-              </h2>
-
-              <p className="text-lg md:text-xl text-white/90 leading-relaxed font-medium max-w-3xl">
-                Visualize therapy growth, focus consistency,
-                emotional stability, behavioral development
-                and personalized improvement trends.
-              </p>
-
-            </div>
-
-            <div className="grid grid-cols-2 gap-5 w-full xl:w-auto">
-
-              <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 p-6 text-white shadow-xl text-center">
-                <div className="text-5xl mb-3">📊</div>
-                <div className="text-lg font-semibold opacity-90">
-                  Growth Rate
-                </div>
-                <div className="text-4xl font-extrabold mt-2">
-                  +28%
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 p-6 text-white shadow-xl text-center">
-                <div className="text-5xl mb-3">🚀</div>
-                <div className="text-lg font-semibold opacity-90">
-                  AI Insights
-                </div>
-                <div className="text-4xl font-extrabold mt-2">
-                  Live
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 mb-14">
-
-          {analyticsCards.map((card, index) => (
-            <div
-              key={index}
-              className={`rounded-[35px] bg-gradient-to-br ${card.color} p-8 text-white shadow-2xl hover:scale-[1.03] transition-all duration-300`}
+    <AppShell>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+        
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.04] dark:border-white/[0.06] mb-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="p-2 rounded-2xl glass-card text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+              aria-label="Back to dashboard"
             >
-
-              <div className="text-6xl mb-5">
-                {card.emoji}
-              </div>
-
-              <div className="text-lg font-semibold opacity-90">
-                {card.title}
-              </div>
-
-              <div className="text-5xl font-extrabold mt-4">
-                {card.value}
-              </div>
-
-            </div>
-          ))}
-
-        </div>
-
-        {/* Weekly Progress */}
-        <div className="rounded-[40px] bg-white shadow-2xl p-8 md:p-10 mb-14 border border-white/60">
-
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-10">
-            <h2 className="text-4xl font-extrabold text-purple-700">
-              📊 Weekly Attention Progress
-            </h2>
-
-            <div className="px-5 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-xl">
-              AI Tracked Analytics
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Progress & Growth Analytics
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Longitudinal attention trends, speech confidence milestones, and earned rewards
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-6 items-end min-h-[320px]">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate("/therapy")}
+              variant="outline"
+              className="rounded-2xl glass-card text-xs font-semibold border-slate-200/80 dark:border-slate-800/80"
+            >
+              View Therapy Plan
+            </Button>
+          </div>
+        </div>
 
-            {weeklyProgress.map((item, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center gap-4"
-              >
+        {/* Top KPI Summary Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          
+          <div className="p-5 sm:p-6 rounded-3xl glass-card">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+              <span>Avg Attention</span>
+              <Eye className="w-4 h-4 text-blue-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-sky-400 tabular-nums">
+              87%
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-500 mt-2">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>+12% this week</span>
+            </div>
+          </div>
 
-                <div className="text-lg font-bold text-gray-700">
-                  {item.score}%
-                </div>
+          <div className="p-5 sm:p-6 rounded-3xl glass-card">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+              <span>Total Words Spoken</span>
+              <Mic className="w-4 h-4 text-purple-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-purple-600 dark:text-purple-400 tabular-nums">
+              146
+            </div>
+            <div className="text-[11px] text-slate-400 mt-2">
+              Across 4 vocabulary packs
+            </div>
+          </div>
 
+          <div className="p-5 sm:p-6 rounded-3xl glass-card">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+              <span>Practice Streak</span>
+              <Flame className="w-4 h-4 text-rose-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-rose-500 tabular-nums">
+              7 Days
+            </div>
+            <div className="text-[11px] text-slate-400 mt-2">
+              Best streak: 14 days
+            </div>
+          </div>
+
+          <div className="p-5 sm:p-6 rounded-3xl glass-card">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+              <span>Milestones Completed</span>
+              <Award className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 tabular-nums">
+              18 / 24
+            </div>
+            <div className="text-[11px] text-slate-400 mt-2">
+              75% of monthly goal
+            </div>
+          </div>
+
+        </div>
+
+        {/* 2-Column Main Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8">
+          
+          {/* Left: Interactive Weekly Trend Chart */}
+          <div className="lg:col-span-8 p-6 sm:p-8 rounded-[32px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-blue-500" />
+                  <span>Weekly Therapy Growth Metrics</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Consistent progress across daily sessions
+                </p>
+              </div>
+
+              {/* Metric Tab Pill Selector */}
+              <div className="flex p-1 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.06]">
+                <button
+                  onClick={() => setMetricTab("focus")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    metricTab === "focus"
+                      ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-sky-400 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Attention Score (%)
+                </button>
+                <button
+                  onClick={() => setMetricTab("speech")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    metricTab === "speech"
+                      ? "bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Words Practiced
+                </button>
+              </div>
+            </div>
+
+            {/* Recharts Area Chart */}
+            <div className="h-64 sm:h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={WEEKLY_DATA}>
+                  <defs>
+                    <linearGradient id="focusGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="speechGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
+                  <XAxis dataKey="day" stroke="#888888" fontSize={12} tickLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgba(15, 23, 42, 0.95)",
+                      border: "none",
+                      borderRadius: "14px",
+                      color: "#fff",
+                      fontSize: "12px",
+                      boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)"
+                    }}
+                  />
+                  {metricTab === "focus" ? (
+                    <Area
+                      type="monotone"
+                      dataKey="focus"
+                      name="Attention (%)"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#focusGrad)"
+                    />
+                  ) : (
+                    <Area
+                      type="monotone"
+                      dataKey="speech"
+                      name="Words Practiced"
+                      stroke="#a855f7"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#speechGrad)"
+                    />
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>Weekly Average: 87.1%</span>
+              <span className="text-emerald-500 font-semibold">Consistent Improvement 🌟</span>
+            </div>
+
+          </div>
+
+          {/* Right: Milestone Unlocks */}
+          <div className="lg:col-span-4 p-6 sm:p-8 rounded-[32px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-500" />
+              <span>Earned Trophies</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              Achievements celebrate the child's dedication
+            </p>
+
+            <div className="space-y-3">
+              {ACHIEVEMENTS.slice(0, 4).map((badge) => (
                 <div
-                  className="w-full rounded-t-[30px] bg-gradient-to-t from-purple-600 via-pink-500 to-cyan-400 shadow-xl transition-all duration-500 hover:scale-105"
-                  style={{
-                    height: `${item.score * 2.2}px`,
-                    minHeight: "80px",
-                  }}
-                />
-
-                <div className="text-lg font-bold text-purple-700">
-                  {item.day}
+                  key={badge.id}
+                  className={`p-3.5 rounded-2xl flex items-center gap-3 border transition-all ${
+                    badge.unlocked
+                      ? "bg-white/60 dark:bg-slate-900/60 border-black/[0.05] dark:border-white/[0.08]"
+                      : "opacity-50 border-dashed border-slate-300 dark:border-slate-700"
+                  }`}
+                >
+                  <div className="text-2xl shrink-0 p-1.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04]">
+                    {badge.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {badge.title}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {badge.description}
+                    </div>
+                  </div>
                 </div>
-
-              </div>
-            ))}
-
-          </div>
-        </div>
-
-        {/* Achievements */}
-        <div className="mb-14">
-
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
-            <h2 className="text-4xl font-extrabold text-yellow-600">
-              🏆 Achievements & Rewards
-            </h2>
-
-            <div className="px-5 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold shadow-xl">
-              12 Badges Earned
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-            {achievements.map((achievement, index) => (
-              <div
-                key={index}
-                className="rounded-[35px] bg-white shadow-2xl overflow-hidden border border-white hover:scale-[1.02] transition-all duration-300"
-              >
-
-                <div className={`bg-gradient-to-r ${achievement.color} p-8 text-white`}>
-
-                  <div className="text-6xl mb-5">
-                    {achievement.emoji}
-                  </div>
-
-                  <h2 className="text-3xl font-extrabold mb-3">
-                    {achievement.title}
-                  </h2>
-
-                  <p className="text-white/90 text-lg font-medium leading-relaxed">
-                    {achievement.description}
-                  </p>
-
-                </div>
-
-                <div className="p-8">
-
-                  <div className="flex items-center justify-between mb-5">
-                    <span className="font-bold text-gray-700 text-lg">
-                      Completion Progress
-                    </span>
-
-                    <span className="font-extrabold text-purple-700 text-xl">
-                      100%
-                    </span>
-                  </div>
-
-                  <div className="w-full h-5 rounded-full bg-gray-100 overflow-hidden">
-                    <div className={`h-full rounded-full bg-gradient-to-r ${achievement.color} w-full`} />
-                  </div>
-
-                </div>
-              </div>
-            ))}
-
-          </div>
-        </div>
-
-        {/* AI Insights */}
-        <div className="rounded-[40px] bg-white shadow-2xl p-8 md:p-10 border border-white/60 overflow-hidden relative">
-
-          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-100 rounded-full blur-3xl opacity-40" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-100 rounded-full blur-3xl opacity-40" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
-              <h2 className="text-4xl font-extrabold text-purple-700">
-                🤖 AI Behavioral Insights
-              </h2>
-
-              <div className="px-5 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-xl">
-                Gemini AI Analysis
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-              <div className="rounded-[30px] bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 p-7 shadow-xl">
-                <h3 className="text-2xl font-extrabold text-purple-700 mb-5">
-                  🧠 Therapy Improvement
-                </h3>
-
-                <p className="text-gray-700 text-lg leading-relaxed font-medium">
-                  AI detected strong progress in attention stability,
-                  social engagement and memory performance.
-                  Continue speech interaction and visual focus tasks.
-                </p>
-              </div>
-
-              <div className="rounded-[30px] bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-100 p-7 shadow-xl">
-                <h3 className="text-2xl font-extrabold text-cyan-700 mb-5">
-                  🎯 Recommended Focus
-                </h3>
-
-                <p className="text-gray-700 text-lg leading-relaxed font-medium">
-                  Suggested next activities:
-                  emotion recognition games,
-                  guided communication exercises,
-                  attention tracking challenges and memory therapy.
-                </p>
-              </div>
-
-            </div>
-          </div>
         </div>
 
       </div>
-    </div>
+    </AppShell>
   );
 }

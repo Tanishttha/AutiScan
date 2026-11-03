@@ -1,648 +1,683 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { socket } from "@/services/socket";
+import {
+  CalendarCheck,
+  CheckCircle2,
+  Circle,
+  Eye,
+  Mic,
+  Brain,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  Flame,
+  Award,
+  Smile,
+  ShieldCheck,
+  Play,
+  RotateCcw
+} from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { api, OfflineError } from "@/services/api";
 
-const therapyPrograms = [
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  minutes: number;
+}
+
+interface WeekPlan {
+  week: number;
+  title: string;
+  focus: string;
+  emoji: string;
+  tasks: Task[];
+}
+
+const ROADMAP: WeekPlan[] = [
   {
+    week: 1,
+    title: "Eye Contact & Visual Engagement",
+    focus: "Gentle eye gaze tracking and face recognition",
     emoji: "👁",
-    title: "Eye Contact Therapy",
-    color: "from-pink-500 to-rose-500",
-    description:
-      "Interactive exercises designed to improve eye contact, social focus and visual engagement.",
     tasks: [
-      "Mirror interaction practice",
-      "Face recognition games",
-      "Emoji tracking activity",
-      "Conversation focus training"
+      { id: "w1-1", title: "Mirror Self-Reflection", description: "Sit in front of a mirror and practice smiling for 2 minutes.", minutes: 3 },
+      { id: "w1-2", title: "Focal Object Gaze", description: "Follow a gentle moving star across the screen without turning head.", minutes: 5 },
+      { id: "w1-3", title: "Emotion Card Identification", description: "Match happy, calm, and curious facial expressions on flashcards.", minutes: 5 },
+      { id: "w1-4", title: "Warm Eye-Contact Hello", description: "Practice making 3-second gentle eye contact when greeting family.", minutes: 2 },
     ]
   },
   {
+    week: 2,
+    title: "Speech & Expressive Communication",
+    focus: "Phonics syllables, slow tempo articulation and voice confidence",
     emoji: "🗣",
-    title: "Speech Communication",
-    color: "from-cyan-500 to-blue-600",
-    description:
-      "Speech therapy and communication improvement exercises for expressive interaction.",
     tasks: [
-      "Pronunciation correction",
-      "Story narration",
-      "Voice confidence training",
-      "Interactive speaking tasks"
+      { id: "w2-1", title: "Vowel Sound Resonance", description: "Sing the vowel sounds 'A-E-I-O-U' slowly like gentle musical notes.", minutes: 4 },
+      { id: "w2-2", title: "3 Favorite Word Repetitions", description: "Practice words 'Apple', 'Water', and 'Star' in the Speech Lab.", minutes: 6 },
+      { id: "w2-3", title: "Visual Story Sharing", description: "Look at a jungle picture and name 2 friendly animals aloud.", minutes: 5 },
+      { id: "w2-4", title: "Joyful Echo Game", description: "Repeat a cheerful phrase back to your parent or AI buddy.", minutes: 3 },
     ]
   },
   {
+    week: 3,
+    title: "Cognitive Memory & Pattern Skills",
+    focus: "Visual recall, sequence arrangement, and calm problem-solving",
     emoji: "🧠",
-    title: "Memory & Cognitive Skills",
-    color: "from-purple-500 to-indigo-600",
-    description:
-      "Memory improvement and cognitive development activities powered by AI therapy guidance.",
     tasks: [
-      "Pattern matching",
-      "Memory recall challenge",
-      "Sequence arrangement",
-      "Puzzle solving"
+      { id: "w3-1", title: "Color Sequence Memory", description: "Remember and tap 3 colors in sequence (Blue -> Green -> Yellow).", minutes: 5 },
+      { id: "w3-2", title: "Shape Match Sorting", description: "Group circles, stars, and squares into matching sensory boxes.", minutes: 5 },
+      { id: "w3-3", title: "Story Event Ordering", description: "Recall what happened first and next in Buddy's space mission.", minutes: 4 },
+      { id: "w3-4", title: "Puzzle Piece Assembly", description: "Complete a simple 4-piece visual puzzle at a comfortable pace.", minutes: 6 },
     ]
   },
   {
+    week: 4,
+    title: "Behavior Stability & Sustained Focus",
+    focus: "Sensory regulation, deep breathing, and attention resilience",
     emoji: "🎯",
-    title: "Attention Training",
-    color: "from-yellow-400 to-orange-500",
-    description:
-      "Focus stability and attention enhancement activities for behavioral improvement.",
     tasks: [
-      "Focus timer challenge",
-      "Attention tracking",
-      "Visual concentration games",
-      "Reaction-based activities"
+      { id: "w4-1", title: "Calm Balloon Breathing", description: "Inhale slowly for 4 seconds, then exhale like blowing a gentle balloon.", minutes: 3 },
+      { id: "w4-2", title: "5-Minute Continuous Attention", description: "Maintain steady focus in the Attention Monitor with zero hurry.", minutes: 5 },
+      { id: "w4-3", title: "Transition Readiness Practice", description: "Use a visual timer countdown before changing activities.", minutes: 3 },
+      { id: "w4-4", title: "Celebration & Star Trophy Review", description: "Count all the achievement badges earned across the month!", minutes: 4 },
+    ]
+  },
+  {
+    week: 5,
+    title: "Playful Conversation & Turn-Taking",
+    focus: "Simple social conversations and emotional vocabulary",
+    emoji: "💬",
+    tasks: [
+      { id: "w5-1", title: "Friendly Hello Exchange", description: "Greet a caregiver and say one word with a happy smile.", minutes: 3 },
+      { id: "w5-2", title: "Story Prompt Practice", description: "Answer 2 short questions about a picture scene.", minutes: 5 },
+      { id: "w5-3", title: "Turn-Taking Game", description: "Take turns naming objects or colors in a calm rhythm.", minutes: 5 },
+      { id: "w5-4", title: "Emotion Words", description: "Practice happy, calm, and excited words with facial cues.", minutes: 4 },
+    ]
+  },
+  {
+    week: 6,
+    title: "Routine Flexibility & Confidence",
+    focus: "Comfort with transitions and small daily changes",
+    emoji: "🔄",
+    tasks: [
+      { id: "w6-1", title: "Visual Transition Timer", description: "Use a timer before moving to the next task and prepare calmly.", minutes: 3 },
+      { id: "w6-2", title: "New Game Practice", description: "Try one new activity without frustration and celebrate effort.", minutes: 5 },
+      { id: "w6-3", title: "Choice-Making Practice", description: "Pick between two activities and talk through the choice.", minutes: 4 },
+      { id: "w6-4", title: "Calm Ending Ritual", description: "Finish the session with a positive recap and breathing reset.", minutes: 3 },
+    ]
+  },
+  {
+    week: 7,
+    title: "Confidence Celebration & Review",
+    focus: "Reflecting on progress and maintaining gentle momentum",
+    emoji: "🏅",
+    tasks: [
+      { id: "w7-1", title: "Progress Review", description: "Look at all completed wins and talk about what felt easy.", minutes: 4 },
+      { id: "w7-2", title: "Best Skill Showcase", description: "Repeat the favorite speech or focus exercise with confidence.", minutes: 5 },
+      { id: "w7-3", title: "Family Celebration", description: "Share one proud moment with a caregiver or loved one.", minutes: 4 },
+      { id: "w7-4", title: "Next-Step Goal", description: "Choose one small goal for the next week and practice it gently.", minutes: 3 },
     ]
   }
 ];
 
-const roadmap = [
-  {
-    week: "Week 1",
-    focus: "Eye Contact & Social Engagement",
-    tasks: [
-      "Mirror therapy",
-      "Emotion recognition",
-      "Visual attention training"
-    ]
-  },
-  {
-    week: "Week 2",
-    focus: "Speech & Communication",
-    tasks: [
-      "Reading aloud",
-      "Confidence speaking",
-      "Vocabulary building"
-    ]
-  },
-  {
-    week: "Week 3",
-    focus: "Memory & Cognitive Development",
-    tasks: [
-      "Puzzle games",
-      "Recall challenges",
-      "Pattern recognition"
-    ]
-  },
-  {
-    week: "Week 4",
-    focus: "Behavior Stability & Attention",
-    tasks: [
-      "Focus exercises",
-      "Reaction tasks",
-      "Mindfulness activities"
-    ]
+const AI_DEFAULT_PAYLOAD = {
+  attention_score: 88,
+  gaze_stability: 85,
+  speech_confidence: 82,
+  engagement: "Focused",
+  blink_frequency: 0.12,
+  hyperactivity_score: 28,
+  focus_duration: 24,
+  movement_variance: 3200,
+  emotion_recognition: 82,
+  social_response_score: 78
+};
+
+const STORAGE_KEYS = {
+  roadmap: "autiscan-therapy-roadmap",
+  selectedWeek: "autiscan-therapy-selected-week",
+  motivation: "autiscan-therapy-motivation",
+  summary: "autiscan-therapy-summary",
+};
+
+const readStoredRoadmap = (): WeekPlan[] => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.roadmap);
+    if (!saved) return ROADMAP;
+
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch {
+    // Fall back to default roadmap when storage is unavailable or corrupted.
   }
-];
+
+  return ROADMAP;
+};
+
+const readStoredNumber = (key: string, fallback: number): number => {
+  try {
+    const saved = Number(localStorage.getItem(key));
+    return Number.isFinite(saved) && saved > 0 ? saved : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const readStoredString = (key: string, fallback: string): string => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved && saved.trim() ? saved : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const buildRoadmapFromAnalysis = (analysis: Record<string, any> | undefined): WeekPlan[] => {
+  const rawRoadmap =
+    analysis?.roadmap ||
+    analysis?.weekly_roadmap ||
+    analysis?.ai_generated_plan?.roadmap ||
+    analysis?.ai_generated_plan?.weekly_roadmap ||
+    [];
+
+  if (!Array.isArray(rawRoadmap) || rawRoadmap.length === 0) {
+    return ROADMAP;
+  }
+
+  const normalizeTasks = (weekPlan: any, weekIndex: number, incomingTasks: any[] = []) => {
+    const fallbackTemplate = [
+      {
+        id: `ai-${weekIndex + 1}-1`,
+        title: weekPlan?.focus || weekPlan?.title || `Activity ${weekIndex + 1}`,
+        description: weekPlan?.description || weekPlan?.expected_improvement || "Follow this guided practice to build confidence and stability.",
+        minutes: 5,
+      },
+      {
+        id: `ai-${weekIndex + 1}-2`,
+        title: `${weekPlan?.focus || "Support"} Warm-Up`,
+        description: `Begin with a calm guided ${weekPlan?.focus || "support"} activity to build confidence and focus.`,
+        minutes: 5,
+      },
+      {
+        id: `ai-${weekIndex + 1}-3`,
+        title: "Confidence Review",
+        description: "Celebrate progress gently and repeat the strongest step to keep momentum positive.",
+        minutes: 4,
+      },
+      {
+        id: `ai-${weekIndex + 1}-4`,
+        title: "Gentle Practice Finish",
+        description: "End the session with a calm recap and encouragement to continue with confidence.",
+        minutes: 3,
+      },
+    ];
+
+    const tasks = (Array.isArray(incomingTasks) ? incomingTasks : []).map((task: any, taskIndex: number) => {
+      if (typeof task === "string") {
+        return {
+          id: `ai-${weekIndex + 1}-${taskIndex}`,
+          title: task,
+          description: "Follow this guided activity to build calm confidence and keep momentum going.",
+          minutes: 5,
+        };
+      }
+
+      return {
+        id: task?.id ?? `ai-${weekIndex + 1}-${taskIndex}`,
+        title: task?.title || task?.name || task?.focus || task?.task || `Activity ${taskIndex + 1}`,
+        description:
+          task?.description ||
+          task?.task ||
+          "Practice this guided activity with a gentle tempo and positive reinforcement.",
+        minutes: Number(task?.minutes) || 5,
+      };
+    });
+
+    const normalized = [...(tasks.length ? tasks : fallbackTemplate)];
+    while (normalized.length < 4) {
+      const nextIndex = normalized.length + 1;
+      normalized.push({
+        id: `ai-${weekIndex + 1}-${nextIndex}`,
+        title: `Gentle support ${nextIndex}`,
+        description: "Finish with a calm repetition routine and a gentle confidence check.",
+        minutes: 4,
+      });
+    }
+
+    return normalized.slice(0, 4);
+  };
+
+  const mapped = rawRoadmap.map((weekPlan: any, index: number) => {
+    const normalizedTasks = Array.isArray(weekPlan?.tasks)
+      ? weekPlan.tasks
+      : Array.isArray(weekPlan?.task_list)
+        ? weekPlan.task_list
+        : typeof weekPlan?.task === "string" || typeof weekPlan?.title === "string"
+          ? [
+              {
+                id: `ai-${index + 1}-1`,
+                title: weekPlan?.task || weekPlan?.title || weekPlan?.focus || `Activity ${index + 1}`,
+                description:
+                  weekPlan?.description ||
+                  weekPlan?.expected_improvement ||
+                  `Practice ${weekPlan?.focus || "this guided support step"} with a calm, encouraging rhythm.`,
+                minutes: Number(weekPlan?.minutes) || 7,
+              },
+              {
+                id: `ai-${index + 1}-2`,
+                title: `${weekPlan?.focus || "Support"} Warm-Up`,
+                description: `Begin with a calm guided ${weekPlan?.focus || "support"} activity to build confidence and focus.`,
+                minutes: 5,
+              },
+              {
+                id: `ai-${index + 1}-3`,
+                title: "Confidence Review",
+                description: "Celebrate progress gently and repeat the strongest step to keep momentum positive.",
+                minutes: 4,
+              },
+            ]
+          : [];
+
+    return {
+      week: index + 1,
+      title: weekPlan?.title || weekPlan?.focus || `Week ${index + 1}`,
+      focus: weekPlan?.focus || weekPlan?.title || weekPlan?.day || "Gentle developmental support",
+      emoji: ["👁", "🗣", "🧠", "🎯", "💬", "🔄", "🏅"][index % 7],
+      tasks: normalizeTasks(weekPlan, index, normalizedTasks),
+    };
+  });
+
+  if (mapped.length < 7) {
+    const padded = [...mapped];
+    while (padded.length < 7) {
+      const nextIndex = padded.length;
+      padded.push({
+        week: nextIndex + 1,
+        title: `Week ${nextIndex + 1}`,
+        focus: "Gentle developmental support",
+        emoji: ["👁", "🗣", "🧠", "🎯", "💬", "🔄", "🏅"][nextIndex % 7],
+        tasks: [
+          {
+            id: `fallback-${nextIndex + 1}-1`,
+            title: "Calm guided repetition",
+            description: "Continue with a gentle, encouraging practice rhythm to build confidence.",
+            minutes: 5,
+          },
+        ],
+      });
+    }
+    return padded;
+  }
+
+  return mapped;
+};
 
 export default function TherapyDashboard() {
-
   const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(false);
-
-  const [aiMessage, setAiMessage] = useState(
-    "AI therapy engine active and ready."
+  const [selectedWeek, setSelectedWeek] = useState<number>(() => readStoredNumber(STORAGE_KEYS.selectedWeek, 1));
+  const [roadmap, setRoadmap] = useState<WeekPlan[]>(() => readStoredRoadmap());
+  const [motivationMessage, setMotivationMessage] = useState<string>(() =>
+    readStoredString(STORAGE_KEYS.motivation, "Keep learning and improving every day!")
   );
-
-  const [therapyScore, setTherapyScore] = useState(78);
-  const [speechScore, setSpeechScore] = useState(72);
-  const [attentionScore, setAttentionScore] = useState(81);
-  const [emotionScore, setEmotionScore] = useState(74);
-
-  const [liveActivity, setLiveActivity] = useState(
-    "🎤 AI Speech Practice"
+  const [aiSummary, setAiSummary] = useState<string>(() =>
+    readStoredString(STORAGE_KEYS.summary, "AI-guided developmental support is preparing your personalized plan.")
   );
-
-  const liveActivities = [
-    "🎤 AI Speech Practice",
-    "👁 Eye Contact Challenge",
-    "🧠 Memory Puzzle Session",
-    "🎯 Focus Stability Training",
-    "😊 Emotion Recognition Therapy",
-    "🚀 Adaptive Learning Exercise"
-  ];
-  const [liveData, setLiveData] = useState<any>(null);
-
-  useEffect(() => {
-    const liveInterval = setInterval(() => {
-
-      setTherapyScore((prev) => {
-        const next = prev + Math.floor(Math.random() * 5 - 2);
-        return Math.max(55, Math.min(100, next));
-      });
-
-      setSpeechScore((prev) => {
-        const next = prev + Math.floor(Math.random() * 5 - 2);
-        return Math.max(50, Math.min(100, next));
-      });
-
-      setAttentionScore((prev) => {
-        const next = prev + Math.floor(Math.random() * 5 - 2);
-        return Math.max(50, Math.min(100, next));
-      });
-
-      setEmotionScore((prev) => {
-        const next = prev + Math.floor(Math.random() * 5 - 2);
-        return Math.max(50, Math.min(100, next));
-      });
-
-      setLiveActivity(
-        liveActivities[
-          Math.floor(Math.random() * liveActivities.length)
-        ]
-      );
-
-    }, 3500);
-
-    const fetchAI = async () => {
-      try {
-        setLoading(true);
-
-const response = await fetch("http://localhost:5002/analyze", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    attention_score: attentionScore,
-    speech_confidence: speechScore,
-    emotion_recognition: emotionScore,
-    gaze_stability: therapyScore,
-    engagement: "Focused"
-  })
-});
-        if (!response.ok) {
-          throw new Error("Backend not responding");
-        }
-
-        const data = await response.json();
-
-         if (data?.analysis) {
-
-          setLiveData(data.analysis);
-
-          if (data.analysis?.motivation_message) {
-            setAiMessage(data.analysis.motivation_message);
-          }
-
-          if (data.analysis?.live_metrics) {
-
-            setTherapyScore(
-              data.analysis.live_metrics.gaze_stability || 78
-            );
-
-            setSpeechScore(
-              data.analysis.live_metrics.speech_confidence || 72
-            );
-
-            setAttentionScore(
-              data.analysis.live_metrics.attention_level || 81
-            );
-
-            setEmotionScore(
-              data.analysis.live_metrics.emotion_recognition || 74
-            );
-          }
-        }
-
-      } catch (error) {
-
-  console.error(
-    "AI FETCH ERROR:",
-    error
-  );
-
-  setAiMessage(
-    "🌟 AI therapy guidance is active and personalized learning exercises are ready."
-  );
-
-  setLiveData({
-
-    motivation_message:
-      "🌈 Smart AI therapy session running successfully.",
-
-    realtime_insights: [
-      "🎯 Attention level improving",
-      "🧠 Cognitive engagement active",
-      "😊 Emotional interaction stable",
-      "🗣 Speech confidence improving"
-    ],
-
-    live_metrics: {
-      gaze_stability: 78,
-      speech_confidence: 74,
-      attention_level: 82,
-      emotion_recognition: 76
+  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("autiscan-completed-tasks");
+      return saved ? JSON.parse(saved) : { "w1-1": true, "w1-2": true };
+    } catch {
+      return { "w1-1": true, "w1-2": true };
     }
   });
 
-} finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAI();
-
-    socket.emit("live_analysis", {
-  attention_score: attentionScore,
-  speech_confidence: speechScore,
-  emotion_recognition: emotionScore,
-  gaze_stability: therapyScore,
-  engagement: "Focused"
-});
-
-const handleLiveResults = (result: any) => {
-
-  setLiveData(result);
-
-  if (result?.motivation_message) {
-    setAiMessage(result.motivation_message);
-  }
-
-  if (result?.live_metrics) {
-
-    setTherapyScore(
-      result.live_metrics.gaze_stability || 78
-    );
-
-    setSpeechScore(
-      result.live_metrics.speech_confidence || 72
-    );
-
-    setAttentionScore(
-      result.live_metrics.attention_level || 81
-    );
-
-    setEmotionScore(
-      result.live_metrics.emotion_recognition || 74
-    );
-  }
-};
-
-socket.off("live_results");
-
-socket.on(
-  "live_results",
-  handleLiveResults
-);
-
-return () => {
-  clearInterval(liveInterval);
-
-  socket.off(
-    "live_results",
-    handleLiveResults
-  );
-};
-
-}, []);
-
-return (
-
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fdf2ff,#e0f2fe,#fae8ff)] p-6 md:p-10 overflow-hidden relative">
-
-      {/* Floating Background Bubbles */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-pink-300/30 rounded-full blur-3xl animate-bounce" />
-      <div className="absolute top-40 right-20 w-40 h-40 bg-cyan-300/30 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-10 left-1/3 w-52 h-52 bg-yellow-300/20 rounded-full blur-3xl animate-ping" />
-      <div className="absolute bottom-20 right-10 w-36 h-36 bg-purple-300/20 rounded-full blur-3xl animate-bounce" />
-
-      <div className="max-w-7xl mx-auto">
-
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-12">
-
-          <div>
-            <h1 className="text-5xl md:text-7xl font-black bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent mb-4 leading-tight drop-shadow-2xl animate-pulse">
-              🌈 AI Fun Therapy World
-            </h1>
-
-            <p className="text-xl md:text-2xl text-gray-700 font-bold max-w-4xl leading-relaxed">
-              Personalized AI-powered autism therapy guidance,
-              behavioral improvement plans, speech exercises,
-              cognitive activities and progress-focused learning.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="px-8 py-5 rounded-[30px] bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 text-white font-black shadow-[0_15px_40px_rgba(236,72,153,0.4)] hover:scale-110 hover:rotate-2 transition-all duration-300 text-lg"
-          >
-            ← Back to Dashboard
-          </button>
-
-        </div>
-
-        {/* Live AI Metrics */}
-        <div className="mb-12 rounded-[40px] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)] border border-white overflow-hidden relative">
-
-          <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-100 rounded-full blur-3xl opacity-40" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-100 rounded-full blur-3xl opacity-40" />
-
-          <div className="relative z-10 p-8 md:p-10">
-
-            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-8 mb-10">
-
-              <div>
-                <h2 className="text-4xl font-extrabold text-purple-700 mb-4">
-                  ⚡ Realtime AI Therapy Analytics
-                </h2>
-
-                <p className="text-lg text-gray-600 leading-relaxed font-medium max-w-3xl">
-                  Dynamic therapy monitoring with adaptive speech, attention,
-                  emotion and cognitive behavioral analytics.
-                </p>
-              </div>
-
-              <div className="rounded-[40px] bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white p-7 shadow-[0_25px_70px_rgba(59,130,246,0.35)] animate-bounce min-w-[320px] border-[4px] border-white">
-                <div className="text-lg font-bold opacity-90 mb-2">
-                  🤖 Current AI Activity
-                </div>
-
-                <div className="text-3xl font-extrabold leading-snug">
-{liveData?.motivation_message || liveActivity}
-                </div>
-              </div>
-
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-
-              <div className="rounded-[35px] bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:scale-105 hover:-rotate-2 transition-all duration-500 border-[3px]">
-                <div className="text-5xl mb-4">🧠</div>
-                <div className="text-2xl font-extrabold text-purple-700 mb-4">
-                  Therapy Progress
-                </div>
-
-                <div className="w-full h-5 rounded-full bg-purple-100 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-700"
-                    style={{ width: `${therapyScore}%` }}
-                  />
-                </div>
-
-                <div className="mt-4 text-xl font-bold text-purple-700">
-                  {therapyScore}% Improved
-                </div>
-              </div>
-
-              <div className="rounded-[35px] bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-100 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:scale-105 hover:-rotate-2 transition-all duration-500 border-[3px]">
-                <div className="text-5xl mb-4">🎤</div>
-                <div className="text-2xl font-extrabold text-cyan-700 mb-4">
-                  Speech Accuracy
-                </div>
-
-                <div className="w-full h-5 rounded-full bg-cyan-100 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-700"
-                    style={{ width: `${speechScore}%` }}
-                  />
-                </div>
-
-                <div className="mt-4 text-xl font-bold text-cyan-700">
-                  {speechScore}% Accuracy
-                </div>
-              </div>
-
-              <div className="rounded-[35px] bg-gradient-to-br from-yellow-50 to-orange-50 border border-orange-100 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:scale-105 hover:-rotate-2 transition-all duration-500 border-[3px]">
-                <div className="text-5xl mb-4">🎯</div>
-                <div className="text-2xl font-extrabold text-orange-700 mb-4">
-                  Attention Stability
-                </div>
-
-                <div className="w-full h-5 rounded-full bg-orange-100 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-700"
-                    style={{ width: `${attentionScore}%` }}
-                  />
-                </div>
-
-                <div className="mt-4 text-xl font-bold text-orange-700">
-                  {attentionScore}% Focus
-                </div>
-              </div>
-
-              <div className="rounded-[35px] bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:scale-105 hover:-rotate-2 transition-all duration-500 border-[3px]">
-                <div className="text-5xl mb-4">😊</div>
-                <div className="text-2xl font-extrabold text-green-700 mb-4">
-                  Emotional Stability
-                </div>
-
-                <div className="w-full h-5 rounded-full bg-green-100 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-700"
-                    style={{ width: `${emotionScore}%` }}
-                  />
-                </div>
-
-                <div className="mt-4 text-xl font-bold text-green-700">
-                  {emotionScore}% Stable
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-
-        {liveData?.realtime_insights?.length > 0 && (
-  <div className="mb-12 rounded-[40px] bg-white border-[4px] border-cyan-100 p-8 shadow-[0_25px_70px_rgba(0,0,0,0.12)] overflow-hidden relative">
-
-    <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-100 rounded-full blur-3xl opacity-40" />
-
-    <div className="relative z-10">
-
-      <h2 className="text-4xl font-black text-cyan-700 mb-8">
-        ⚡ Live AI Insights
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-        {liveData.realtime_insights.map((insight: string, index: number) => (
-          <div
-            key={index}
-            className="rounded-[30px] bg-gradient-to-br from-cyan-50 to-blue-50 border-[3px] border-white p-6 shadow-[0_15px_35px_rgba(0,0,0,0.08)] font-black text-gray-700 hover:scale-105 transition-all duration-300"
-          >
-            {insight}
-          </div>
-        ))}
-
-      </div>
-    </div>
-  </div>
-)}
-
-        {/* Therapy Cards */}
-        <div className="mb-12 rounded-[40px] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)] border-[4px] border-white overflow-hidden">
-
-          <div className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-6 text-white">
-            <h2 className="text-3xl font-extrabold mb-2">
-              🤖 Live Gemini AI Therapy Analysis
-            </h2>
-
-            <p className="text-white/90 text-lg">
-              Real-time AI-generated behavioral therapy insights.
-            </p>
-          </div>
-
-          <div className="p-8">
-
-            {loading ? (
-              <div className="text-xl font-bold text-purple-600 animate-pulse">
-                Generating AI therapy roadmap...
-              </div>
-            ) : (
-              <div className="rounded-3xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 p-6 text-lg leading-relaxed text-gray-700 font-medium shadow-sm whitespace-pre-line">
-{aiMessage ||
-  "🌟 AI therapy guidance is active and running successfully."}              </div>
-            )}
-
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-14">
-
-          {therapyPrograms.map((program, index) => (
-            <div
-              key={index}
-              className="rounded-[40px] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)] overflow-hidden border-[4px] border-white hover:scale-[1.05] hover:-translate-y-2 transition-all duration-500 relative"
-            >
-
-              <div className={`bg-gradient-to-r ${program.color} p-8 text-white relative`}>
-
-                <div className="text-6xl mb-5">
-                  {program.emoji}
-                </div>
-
-                <div className="absolute top-4 right-4 text-5xl animate-bounce">
-                  ✨
-                </div>
-
-                <h2 className="text-3xl font-extrabold mb-4">
-                  {program.title}
-                </h2>
-
-                <p className="text-white/90 text-lg leading-relaxed font-medium">
-                  {program.description}
-                </p>
-
-              </div>
-
-              <div className="p-8">
-
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                  Recommended Activities
-                </h3>
-
-                <div className="space-y-4">
-
-                  {program.tasks.map((task, i) => (
-                    <div
-                      key={i}
-                      className="rounded-[25px] bg-gradient-to-r from-yellow-50 via-pink-50 to-cyan-50 border-[3px] border-white p-5 font-black text-gray-700 shadow-[0_15px_35px_rgba(0,0,0,0.08)] hover:scale-105 transition-all duration-300"
-                    >
-                      ✨ {task}
-                    </div>
-                  ))}
-
-                </div>
-
-<button
-  onClick={() => {
-
-    if (program.title === "Eye Contact Therapy") {
-      navigate("/attention");
-
-    } else if (
-      program.title === "Speech Communication"
-    ) {
-      navigate("/speech");
-
-    } else if (
-      program.title === "Memory & Cognitive Skills"
-    ) {
-      navigate("/ai-companion");
-
-    } else if (
-      program.title === "Attention Training"
-    ) {
-      navigate("/attention");
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.roadmap, JSON.stringify(roadmap));
+    } catch {
+      // Ignore storage write failures to keep the UI functional in restricted environments.
     }
-  }}
-  className={`mt-8 w-full rounded-[30px] bg-gradient-to-r ${program.color} text-white py-5 font-black text-xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] hover:scale-110 hover:rotate-1 transition-all duration-300 border-[3px] border-white animate-pulse`}
->
-  Start Therapy Session 🚀
-</button>
+  }, [roadmap]);
 
-              </div>
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.selectedWeek, String(selectedWeek));
+    } catch {
+      // Ignore storage write failures to keep the UI functional in restricted environments.
+    }
+  }, [selectedWeek]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.motivation, motivationMessage);
+    } catch {
+      // Ignore storage write failures to keep the UI functional in restricted environments.
+    }
+  }, [motivationMessage]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.summary, aiSummary);
+    } catch {
+      // Ignore storage write failures to keep the UI functional in restricted environments.
+    }
+  }, [aiSummary]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    api
+      .analyzeTherapy(AI_DEFAULT_PAYLOAD)
+      .then((response) => {
+        if (!isMounted) return;
+
+        const analysis = response?.analysis ?? {};
+        const nextRoadmap = buildRoadmapFromAnalysis(analysis);
+        const nextMotivation =
+          analysis?.motivation_message ||
+          analysis?.ai_generated_plan?.motivation_message ||
+          "Keep learning and improving every day!";
+        const nextSummary =
+          analysis?.ai_generated_plan?.summary ||
+          analysis?.summary ||
+          analysis?.improvement_level ||
+          "AI-guided developmental support is preparing your personalized plan.";
+
+        setRoadmap(nextRoadmap);
+        setSelectedWeek((current) => Math.min(current, nextRoadmap.length || 1));
+        setMotivationMessage(nextMotivation);
+        setAiSummary(nextSummary);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        if (!(err instanceof OfflineError)) {
+          console.warn("Therapy analysis unavailable, using fallback roadmap.", err);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const currentPlan = roadmap[selectedWeek - 1] ?? roadmap[0] ?? ROADMAP[0];
+  const currentRoadmapTaskIds = new Set(roadmap.flatMap((plan) => plan.tasks.map((task) => task.id)));
+
+  const toggleTask = (taskId: string) => {
+    setCompletedTasks((prev) => {
+      const updated = { ...prev, [taskId]: !prev[taskId] };
+      localStorage.setItem("autiscan-completed-tasks", JSON.stringify(updated));
+      if (updated[taskId]) {
+        toast.success("Task completed! Milestone points added 🌟");
+      }
+      return updated;
+    });
+  };
+
+  const currentWeekDoneCount = currentPlan.tasks.filter((t) => completedTasks[t.id]).length;
+  const currentWeekProgress = Math.round((currentWeekDoneCount / currentPlan.tasks.length) * 100);
+
+  const totalTasks = roadmap.reduce((sum, w) => sum + w.tasks.length, 0);
+  const totalCompleted = roadmap.reduce(
+    (sum, week) => sum + week.tasks.filter((task) => completedTasks[task.id]).length,
+    0
+  );
+  const overallProgress = Math.min(100, Math.round((totalCompleted / Math.max(totalTasks, 1)) * 100));
+
+  const staleCompletedCount = Object.keys(completedTasks).filter((taskId) => !currentRoadmapTaskIds.has(taskId) && completedTasks[taskId]).length;
+  if (staleCompletedCount > 0) {
+    localStorage.setItem(
+      "autiscan-completed-tasks",
+      JSON.stringify(Object.fromEntries(Object.entries(completedTasks).filter(([taskId]) => currentRoadmapTaskIds.has(taskId))))
+    );
+  }
+
+  return (
+    <AppShell>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+        
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.04] dark:border-white/[0.06] mb-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="p-2 rounded-2xl glass-card text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Personalized Therapy Roadmap
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Structured developmental exercises for communication, attention, and sensory comfort
+              </p>
+              <p className="text-[11px] text-blue-600 dark:text-sky-400 mt-2 font-medium">
+                {aiSummary}
+              </p>
             </div>
-          ))}
+          </div>
 
-        </div>
-
-        {/* AI Roadmap */}
-        <div className="rounded-[40px] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)] p-8 md:p-10 border border-white/60 overflow-hidden relative">
-
-          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-100 rounded-full blur-3xl opacity-40" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-100 rounded-full blur-3xl opacity-40" />
-
-          <div className="relative z-10">
-
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-10">
-              <h2 className="text-4xl font-extrabold text-purple-700">
-                🗺 AI Therapy Roadmap
-              </h2>
-
-              <div className="px-5 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
-                Personalized Weekly Plan
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-              {roadmap.map((week, index) => (
-                <div
-                  key={index}
-                  className="rounded-[40px] bg-gradient-to-br from-yellow-50 via-pink-50 to-cyan-50 border-[4px] border-white p-8 shadow-[0_20px_60px_rgba(0,0,0,0.12)] hover:scale-105 hover:-rotate-1 transition-all duration-500"
-                >
-
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-3xl font-extrabold text-purple-700">
-                      {week.week}
-                    </h3>
-
-                    <div className="text-4xl">
-                      🚀
-                    </div>
-                  </div>
-
-                  <p className="text-xl font-bold text-gray-700 mb-6 leading-relaxed">
-                    {week.focus}
-                  </p>
-
-                  <div className="space-y-4">
-
-                    {week.tasks.map((task, i) => (
-                      <div
-                        key={i}
-                        className="rounded-[25px] bg-white border-[3px] border-pink-100 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.08)] font-black text-gray-700 hover:scale-105 transition-all duration-300"
-                      >
-                        🎯 {task}
-                      </div>
-                    ))}
-
-                  </div>
-
+          {/* Overall Progress Gauge */}
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl glass-card flex items-center gap-3">
+              <div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Monthly Milestone</div>
+                <div className="text-base font-bold text-slate-900 dark:text-white tabular-nums">
+                  {totalCompleted} of {totalTasks} Tasks ({overallProgress}%)
                 </div>
-              ))}
-
+              </div>
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200/50 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-sky-400 font-bold text-xs">
+                {overallProgress}%
+              </div>
             </div>
           </div>
         </div>
 
+        <div className="mb-6 p-4 rounded-3xl border border-blue-200/60 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/30 text-xs text-slate-700 dark:text-slate-200">
+          <div className="flex items-center gap-2 font-semibold text-blue-700 dark:text-sky-300">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Care Note</span>
+          </div>
+          <p className="mt-2 leading-relaxed">{motivationMessage}</p>
+        </div>
+
+        {/* Apple-style Segmented Week Selector Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {roadmap.map((plan) => {
+            const isSelected = selectedWeek === plan.week;
+            const weekDone = plan.tasks.filter((t) => completedTasks[t.id]).length;
+            const isAllDone = weekDone === plan.tasks.length;
+
+            return (
+              <button
+                key={plan.week}
+                onClick={() => setSelectedWeek(plan.week)}
+                className={`p-4 rounded-[24px] text-left transition-all duration-200 active:scale-95 border ${
+                  isSelected
+                    ? "bg-white dark:bg-slate-800 border-blue-500/50 dark:border-sky-400/50 shadow-md ring-2 ring-blue-500/20"
+                    : "glass-card border-black/[0.05] dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xl">{plan.emoji}</span>
+                  {isAllDone ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
+                      {weekDone}/{plan.tasks.length}
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Week {plan.week}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {plan.title.split("&")[0]}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Week Stage */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Main Task Checklist Column */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            <div className="p-6 sm:p-8 rounded-[32px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.05] dark:border-white/[0.06]">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-sky-400 mb-1">
+                    <span>{currentPlan.emoji}</span>
+                    <span>Week {currentPlan.week} Focus Plan</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                    {currentPlan.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    {currentPlan.focus}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Week Progress: {currentWeekProgress}%
+                  </span>
+                  <div className="w-32 h-2 bg-slate-200 dark:bg-slate-800 rounded-full mt-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 dark:bg-sky-400 rounded-full transition-all duration-300"
+                      style={{ width: `${currentWeekProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Task Items */}
+              <div className="mt-6 space-y-3">
+                {currentPlan.tasks.map((task, idx) => {
+                  const isDone = !!completedTasks[task.id];
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={() => toggleTask(task.id)}
+                      className={`p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-200 border flex items-start gap-4 ${
+                        isDone
+                          ? "bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300/40 dark:border-emerald-800/40"
+                          : "glass-card hover:bg-black/[0.02] dark:hover:bg-white/[0.04] border-black/[0.05] dark:border-white/[0.08]"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        aria-label="Toggle task"
+                        className="mt-0.5 shrink-0"
+                      >
+                        {isDone ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-100 dark:fill-emerald-950" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-slate-400 hover:text-slate-600" />
+                        )}
+                      </button>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className={`text-sm font-bold ${isDone ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white"}`}>
+                            {task.title}
+                          </h3>
+                          <span className="text-[11px] font-semibold text-slate-400 shrink-0">
+                            ~{task.minutes} mins
+                          </span>
+                        </div>
+                        <p className={`text-xs mt-1 leading-relaxed ${isDone ? "text-slate-400 line-through" : "text-slate-600 dark:text-slate-400"}`}>
+                          {task.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Side Column: Quick Care Modules & Tips */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* Quick launch interactive tools */}
+            <div className="p-6 rounded-[32px] glass-card border border-black/[0.06] dark:border-white/[0.08]">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
+                Companion Tools For Week {selectedWeek}
+              </h3>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate("/speech")}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl glass-card hover:bg-blue-50/50 dark:hover:bg-blue-950/40 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all border border-black/[0.05] dark:border-white/[0.08]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <Mic className="w-4 h-4" />
+                    </div>
+                    <span>Speech Pronunciation Lab</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                <button
+                  onClick={() => navigate("/attention")}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl glass-card hover:bg-blue-50/50 dark:hover:bg-blue-950/40 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all border border-black/[0.05] dark:border-white/[0.08]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <span>Attention Focus Monitor</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => navigate("/ai-companion")}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl glass-card hover:bg-blue-50/50 dark:hover:bg-blue-950/40 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all border border-black/[0.05] dark:border-white/[0.08]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <span>Joyful AI Learning Buddy</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Sensory Therapy Encouragement */}
+            <div className="p-6 rounded-[32px] glass-card bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-900/30 text-xs">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold mb-2">
+                <Smile className="w-4 h-4" />
+                <span>Sensory Integration Note</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                If the child feels overwhelmed or tired, pause the session immediately. AutiScan adapts to the child's pace, with zero urgency or punitive scoring.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
-    </div>
+    </AppShell>
   );
 }

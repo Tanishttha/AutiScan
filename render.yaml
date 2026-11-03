@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: autiscan
+    runtime: docker
+    plan: standard
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_EXECUTABLE
+        value: /opt/venv/bin/python
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: GROQ_API_KEY
+        sync: false

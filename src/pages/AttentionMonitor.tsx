@@ -1,523 +1,482 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import WebcamPreview from "./WebcamPreview";
-import FocusChart from "./FocusChart";
-import ReportPanel from "./ReportPanel";
+import {
+  Eye,
+  Camera,
+  CameraOff,
+  Sparkles,
+  ArrowLeft,
+  Download,
+  Activity,
+  Smile,
+  ShieldCheck,
+  CheckCircle2,
+  RefreshCw,
+  Clock,
+  Heart
+} from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { api, OfflineError } from "@/services/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-function AttentionMonitor() {
-  const [score, setScore] = useState<number>(0);
-  const [engagement, setEngagement] = useState<string>("Loading...");
+interface HistoryPoint {
+  time: string;
+  score: number;
+}
 
-  const [blinkCount, setBlinkCount] = useState<number>(0);
-  const [emotion, setEmotion] = useState<string>("Neutral");
-  const [gazeDirection, setGazeDirection] = useState<string>("Center");
-  const [focusPercentage, setFocusPercentage] = useState<number>(0);
-  const [behavioralStatus, setBehavioralStatus] = useState<string>("");
-  const [sessionTime, setSessionTime] = useState<number>(0);
-  const [history, setHistory] = useState<
-    {
-      time: string;
-      score: number;
-    }[]
-  >([]);
-
-  const [therapy, setTherapy] = useState<any>(null);
-  const [analytics, setAnalytics] = useState<any>(null);
-
+const AttentionMonitor = () => {
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const latestMetricsRef = useRef({ sessionSeconds: 0, attentionScore: 0, isDisconnected: false });
 
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [cameraActive, setCameraActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string>("");
+  const [attentionScore, setAttentionScore] = useState<number>(0);
+  const [engagement, setEngagement] = useState<string>("Waiting for telemetry");
+  const [emotion, setEmotion] = useState<string>("Awaiting input");
+  const [blinkCount, setBlinkCount] = useState<number>(0);
+  const [confidence, setConfidence] = useState<number>(0);
+  const [faceDetected, setFaceDetected] = useState<boolean>(false);
+  const [eyesDetected, setEyesDetected] = useState<boolean>(false);
+  const [trackingAvailable, setTrackingAvailable] = useState<boolean | null>(null);
+  const [sessionSeconds, setSessionSeconds] = useState<number>(0);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isDisconnected, setIsDisconnected] = useState<boolean>(false);
 
-  const exportReport = async () => {
-    if (!reportRef.current) return;
+  const [history, setHistory] = useState<HistoryPoint[]>([{ time: "0s", score: 0 }]);
 
-    const canvas = await html2canvas(reportRef.current);
+  const captureVideoFrame = () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth) return undefined;
 
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-    pdf.save("AI_Attention_Report.pdf");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) return undefined;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.65);
   };
 
-  useEffect(() => {
-    let activeStream: MediaStream;
-
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        activeStream = stream;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      })
-      .catch((err) => {
-        console.error("Webcam Error:", err);
-        setCameraError("Camera access denied or unavailable");
+  const startCamera = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Webcam not supported by browser environment.");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+        audio: false,
       });
+      mediaStreamRef.current = stream;
+      setMediaStream(stream);
+      setCameraActive(true);
+      setCameraError("");
+      toast.success("Webcam connected successfully!");
+    } catch (err: unknown) {
+      console.warn("Webcam error:", err);
+      setCameraActive(false);
+      setCameraError("Could not access webcam. Allow camera access to start live focus tracking.");
+    }
+  };
 
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://localhost:5002/attention");
-
-        const data = await response.json();
-
-        const analysis = data.analysis || {};
-
-        setTherapy(data.therapy || null);
-        setAnalytics(data.analytics || null);
-
-        setScore(
-          Number(
-            analysis.attention_score || 0
-          )
-        );
-        setEngagement(analysis.engagement || "Unknown");
-
-        setBlinkCount(analysis.blink_count || 0);
-        setEmotion(analysis.emotion || "Neutral");
-        setGazeDirection(
-          analysis.gaze_direction || "Center"
-        );
-        setFocusPercentage(
-          analysis.focus_percentage || 0
-        );
-        setBehavioralStatus(
-          analysis.behavioral_status || ""
-        );
-        setSessionTime(analysis.session_time || 0);
-
-        setHistory((prev) => {
-          const attentionValue =
-            analysis.attention_score ||
-            data.attention_score ||
-            0;
-
-          const updated = [
-            ...prev,
-            {
-              time: new Date().toLocaleTimeString(),
-              score: Number(attentionValue),
-            },
-          ];
-
-          return updated.slice(-15);
-        });
-      } catch (error) {
-        console.error("Attention API Error:", error);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(() => {
-      fetchData();
-    }, 2000);
-
+  // Auto request webcam stream on mount
+  useEffect(() => {
+    startCamera();
     return () => {
-      clearInterval(interval);
-
-      if (activeStream) {
-        activeStream.getTracks().forEach((track) => track.stop());
-      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
     };
   }, []);
 
+  // Guarantee stream attachment to video element whenever mediaStream is set
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch((e) => {
+        console.warn("Video playback prevented or interrupted:", e);
+      });
+    }
+  }, [mediaStream]);
+
+  // Keep elapsed time independent from the backend polling rate.
+  useEffect(() => {
+    const timer = setInterval(() => setSessionSeconds((prev) => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    latestMetricsRef.current = { sessionSeconds, attentionScore, isDisconnected };
+  }, [sessionSeconds, attentionScore, isDisconnected]);
+
+  // Send the current browser webcam frame to the Python tracker through the same port.
+  useEffect(() => {
+    let failureCount = 0;
+    let pollInFlight = false;
+
+    const pollTelemetry = async () => {
+      if (pollInFlight) return;
+      const frame = captureVideoFrame();
+      if (!frame) return;
+      pollInFlight = true;
+
+      try {
+        const data = await api.getAttention(frame);
+        setIsDisconnected(false);
+        failureCount = 0;
+
+        if (data?.analysis) {
+          const nextAttentionScore = Number(data.analysis.attention_score ?? 0);
+          const nextFaceDetected = Boolean(data.analysis.face_detected);
+          const nextConfidence = Number(data.analysis.confidence ?? 0);
+
+          setAttentionScore(nextAttentionScore);
+          setEngagement(data.analysis.engagement || "Waiting for camera frame");
+          setEmotion(data.analysis.emotion || "Inactive");
+          setBlinkCount(Number(data.analysis.blink_count ?? 0));
+          setConfidence(nextConfidence);
+          setFaceDetected(nextFaceDetected);
+          setEyesDetected(Number(data.analysis.eyes_detected ?? 0) >= 2);
+          setTrackingAvailable(Boolean(data.analysis.tracking_available));
+        }
+      } catch (err: unknown) {
+        failureCount++;
+        setIsDisconnected(true);
+        if (failureCount === 1) {
+          if (err instanceof OfflineError) {
+            toast.error("No internet connection / Backend server disconnected");
+          } else {
+            toast.error(`Live telemetry paused: ${err instanceof Error ? err.message : "backend request failed"}`);
+          }
+        }
+      } finally {
+        pollInFlight = false;
+      }
+    };
+
+    void pollTelemetry();
+    const timer = setInterval(() => void pollTelemetry(), 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Record graph points with actual session time; keep the latest 10 points.
+  useEffect(() => {
+    const chartInterval = setInterval(() => {
+      setHistory((prev) => {
+        const { sessionSeconds: elapsed, attentionScore: score, isDisconnected: disconnected } = latestMetricsRef.current;
+        if (disconnected) return prev;
+        const updated = [...prev, { time: `${elapsed}s`, score }].slice(-10);
+        return updated;
+      });
+    }, 3000);
+
+    return () => clearInterval(chartInterval);
+  }, []);
+
+
+  const exportPDF = async () => {
+    if (!reportRef.current) return;
+    setIsExporting(true);
+    toast.info("Generating high-resolution report PDF...");
+
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`AutiScan_Attention_Session_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("PDF Report downloaded successfully!");
+    } catch {
+      toast.error("Could not export PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const rem = secs % 60;
+    return `${mins}:${rem < 10 ? "0" : ""}${rem}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-purple-100 p-6">
-      <div className="max-w-7xl mx-auto" ref={reportRef}>
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-extrabold text-purple-700 mb-4">
-            🌟 AI Attention Monitor 🌟
-          </h1>
-
-          <p className="text-xl text-gray-600 font-semibold">
-            Real-time Autism Behavioral Analysis System
-          </p>
-
-          <div className="mt-6 flex justify-center">
+    <AppShell>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+        
+        {/* Navigation & Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.04] dark:border-white/[0.06] mb-8">
+          <div className="flex items-center gap-3">
             <button
-              onClick={exportReport}
-              className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl hover:scale-105 transition-all duration-300"
+              onClick={() => navigate("/dashboard")}
+              className="p-2 rounded-2xl glass-card text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+              aria-label="Back to dashboard"
             >
-              📄 Export AI Report
+              <ArrowLeft className="w-4 h-4" />
             </button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Attention & Focus Monitor
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Gentle webcam gaze tracking, eye stability analysis, and session reports
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <Clock className="w-3.5 h-3.5 text-blue-500" />
+              <span>Session: {formatTime(sessionSeconds)}</span>
+            </div>
+
+            <Button
+              onClick={exportPDF}
+              disabled={isExporting}
+              className="rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{isExporting ? "Exporting..." : "Export Report"}</span>
+            </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
-          <WebcamPreview gazeDirection={gazeDirection} />
-
-          <ReportPanel
-            score={score}
-            engagement={engagement}
-            emotion={emotion}
-            blinkCount={blinkCount}
-            gazeDirection={gazeDirection}
-            focusPercentage={focusPercentage}
-            behavioralStatus={behavioralStatus}
-            sessionTime={sessionTime}
-          />
-        </div>
-
-        <div className="mt-10">
-          {history.length === 0 ? (
-            <div className="bg-white rounded-3xl p-6 shadow-xl text-center text-gray-600 font-bold text-lg border border-purple-100">
-              📊 Waiting for realtime attention data...
+        {/* Printable/Exportable Report Container */}
+        <div ref={reportRef} className="space-y-8">
+          
+          {isDisconnected && (
+            <div className="p-4 rounded-3xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-between text-amber-700 dark:text-amber-300 text-xs sm:text-sm animate-pulse">
+              <div className="flex items-center gap-2.5 font-semibold">
+                <span className="text-base">⚠️</span>
+                <span>Live telemetry unavailable — retrying automatically</span>
+              </div>
+              <span className="text-[11px] opacity-80">Reconnecting automatically...</span>
             </div>
-          ) : (
-            <FocusChart history={history} />
           )}
-        </div>
 
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow-xl text-center border-2 border-pink-200">
-            <div className="text-4xl mb-3">🧠</div>
-            <div className="font-bold text-purple-700 text-xl">
-              AI Analysis
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-xl text-center border-2 border-blue-200">
-            <div className="text-4xl mb-3">🎥</div>
-            <div className="font-bold text-purple-700 text-xl">
-              Live Tracking
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-xl text-center border-2 border-yellow-200">
-            <div className="text-4xl mb-3">📊</div>
-            <div className="font-bold text-purple-700 text-xl">
-              Analytics
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-xl text-center border-2 border-green-200">
-            <div className="text-4xl mb-3">⏱️</div>
-            <div className="font-bold text-purple-700 text-xl">
-              {sessionTime}s Session
-            </div>
-          </div>
-        </div>
-
-        {therapy && (
-          <div className="mt-14 space-y-10">
-
-            {/* Therapy Overview */}
-            <div className="rounded-[35px] bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl p-8">
-
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-
-                <div>
-                  <h2 className="text-4xl font-extrabold text-purple-700 mb-3">
-                    🧠 AI Therapy Insights
-                  </h2>
-
-                  <p className="text-gray-600 text-lg font-medium">
-                    Personalized therapy recommendations generated from live behavioral AI analysis.
-                  </p>
+          {/* Two-Column Stage Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left Zone: Webcam & Frosted HUD Stage */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="p-4 sm:p-6 rounded-[36px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl">
+                
+                <div className="flex items-center justify-between mb-4 px-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${cameraActive ? "bg-emerald-500" : "bg-amber-400"}`} />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      {cameraActive ? "Live Optical Stream" : "Interactive Focus Visualizer"}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    640×480 · 30 FPS
+                  </span>
                 </div>
 
-                <div className="flex gap-4 flex-wrap">
+                {/* Video & Crosshair HUD Area */}
+                <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-950 flex items-center justify-center border border-black/[0.1] dark:border-white/[0.1]">
+                  
+                  {/* Always mounted video element ensures ref is never null when stream attaches */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={() => {
+                      videoRef.current?.play().catch(() => {});
+                    }}
+                    className={`w-full h-full object-cover -scale-x-100 transition-opacity duration-300 ${
+                      cameraActive ? "opacity-100" : "opacity-0 absolute inset-0 pointer-events-none"
+                    }`}
+                  />
 
-                  <div className="rounded-3xl bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-5 shadow-xl text-center min-w-[180px]">
-                    <div className="text-sm uppercase font-bold opacity-80">
-                      Progress Score
+                  {!cameraActive && (
+                    <div className="text-center p-6 text-slate-400 z-10">
+                      <div className="w-16 h-16 rounded-3xl bg-slate-800 text-slate-300 flex items-center justify-center mx-auto mb-3 shadow-lg">
+                        <Camera className="w-8 h-8 text-sky-400 animate-pulse" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-200">Camera Feed Idle / Blocked</p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                        Allow camera permission to view your live face & eye tracking stream, or test with focus telemetry.
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={startCamera}
+                        size="sm"
+                        className="mt-3 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs px-4 py-2"
+                      >
+                        <Camera className="w-3.5 h-3.5 mr-1.5" />
+                        Enable Live Camera
+                      </Button>
                     </div>
-                    <div className="text-4xl font-extrabold mt-1">
-                      {therapy.progress_score}%
+                  )}
+
+                  {/* Gentle Child-Friendly Focus Crosshair HUD */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div className="relative w-44 h-44 rounded-full border-2 border-dashed border-sky-400/50 flex items-center justify-center animate-spin-slow">
+                      <div className="w-3 h-3 rounded-full bg-sky-400/80 shadow-lg shadow-sky-400/50" />
                     </div>
                   </div>
 
-                  <div className="rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-5 shadow-xl text-center min-w-[180px]">
-                    <div className="text-sm uppercase font-bold opacity-80">
-                      Improvement
-                    </div>
-                    <div className="text-2xl font-extrabold mt-2">
-                      {therapy.improvement_level}
-                    </div>
+                  {/* HUD Floating Status Capsule */}
+                  <div className="absolute top-4 left-4 backdrop-blur-xl bg-black/60 text-white px-3.5 py-1.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border border-white/10">
+                    <Eye className="w-3.5 h-3.5 text-sky-400" />
+                    <span>{faceDetected ? "Focus Anchor: Active" : "Focus Anchor: No Face"}</span>
+                  </div>
+
+                  <div className="absolute bottom-4 right-4 backdrop-blur-xl bg-black/60 text-white px-3.5 py-1.5 rounded-2xl text-xs font-semibold tabular-nums border border-white/10">
+                    Confidence: {Number.isFinite(confidence) ? `${confidence.toFixed(1)}%` : "0.0%"}
                   </div>
 
                 </div>
-              </div>
-            </div>
 
-            {/* AI Personalized Guidance */}
-            <div className="rounded-[35px] bg-white shadow-2xl p-8 border border-purple-100 overflow-hidden relative">
-
-              <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200/30 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-pink-200/30 rounded-full blur-3xl" />
-
-              <div className="relative z-10">
-
-                <h2 className="text-4xl font-extrabold text-purple-700 mb-6">
-                  🤖 AI Personalized Guidance
-                </h2>
-
-               <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-8 rounded-[30px] border border-purple-100 shadow-inner text-gray-700 text-lg leading-relaxed font-medium">
-
-  {typeof therapy.ai_generated_plan === "string" ? (
-
-    <div className="whitespace-pre-wrap">
-      {therapy.ai_generated_plan}
-    </div>
-
-  ) : (
-
-    <div className="space-y-6">
-
-      <div>
-        <h3 className="font-bold text-2xl mb-3 text-purple-700">
-          🧠 Summary
-        </h3>
-
-        <p className="whitespace-pre-wrap">
-          {therapy.ai_generated_plan?.summary ||
-            "Generating AI summary..."}
-        </p>
-      </div>
-
-      <div>
-        <h3 className="font-bold text-2xl mb-3 text-pink-600">
-          💬 Motivation
-        </h3>
-
-        <p className="whitespace-pre-wrap">
-          {therapy.ai_generated_plan?.motivation_message ||
-            "Preparing motivation guidance..."}
-        </p>
-      </div>
-
-      <div>
-        <h3 className="font-bold text-2xl mb-3 text-cyan-700">
-          👨‍👩‍👧 Parent Guidance
-        </h3>
-
-        <p className="whitespace-pre-wrap">
-          {therapy.ai_generated_plan?.parent_guidance ||
-            "Preparing parent guidance..."}
-        </p>
-      </div>
-
-    </div>
-  )}
-
-</div>
-
-              </div>
-            </div>
-
-            {/* Therapy Recommendations */}
-            <div className="rounded-[35px] bg-white shadow-2xl p-8 border border-pink-100">
-
-              <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-                <h2 className="text-4xl font-extrabold text-pink-600">
-                  🎯 Personalized Therapy Activities
-                </h2>
-
-                <div className="px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold shadow-xl">
-                  {therapy.recommendations?.length || 0} Activities
+                <div className="mt-4 px-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>
+                    {trackingAvailable === false
+                      ? "Face tracking model unavailable. Install the supported OpenCV version and restart."
+                      : trackingAvailable === null
+                        ? "Waiting for camera and face tracking..."
+                      : !faceDetected
+                        ? "Face not visible — move into frame and keep your face centered."
+                        : eyesDetected
+                          ? "Face and eyes analyzed locally; video is not saved."
+                          : "Face detected; eye landmarks are not available yet."}
+                  </span>
+                  <span className="text-blue-600 dark:text-sky-400 font-medium">
+                    {trackingAvailable === false ? "Tracking unavailable" : trackingAvailable === null ? "Starting tracker" : eyesDetected ? "Eye tracking active" : faceDetected ? "Face detected" : "Waiting for face"}
+                  </span>
                 </div>
+
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                {therapy.recommendations?.map(
-                  (rec: any, index: number) => (
+            {/* Right Zone: Metric Cards, Graph & Recommendations */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl glass-card">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                    Real-Time Attention Index
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-extrabold text-blue-600 dark:text-sky-400 tabular-nums">
+                      {attentionScore}%
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-500">{attentionScore >= 60 ? "Steady" : "Needs focus"}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
                     <div
-                      key={index}
-                      className="rounded-[30px] bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-7 border border-white shadow-xl hover:scale-[1.02] transition-all duration-300"
-                    >
+                      className="h-full bg-blue-600 dark:bg-sky-400 rounded-full transition-all duration-500"
+                      style={{ width: `${attentionScore}%` }}
+                    />
+                  </div>
+                </div>
 
-                      <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
-
-                        <div>
-                          <h3 className="text-2xl font-extrabold text-purple-700">
-                            {rec.category}
-                          </h3>
-
-                          <p className="text-gray-600 mt-1 font-medium">
-                            {rec.goal}
-                          </p>
-                        </div>
-
-                        <div className="px-5 py-2 rounded-full bg-purple-600 text-white font-bold shadow-lg text-sm">
-                          {rec.difficulty}
-                        </div>
-
-                      </div>
-
-                      <div className="space-y-3 mb-6">
-                        {rec.activities?.map(
-                          (
-                            activity: string,
-                            i: number
-                          ) => (
-                            <div
-                              key={i}
-                              className="bg-white rounded-2xl p-4 border border-purple-100 shadow-sm font-semibold text-gray-700"
-                            >
-                              ✨ {activity}
-                            </div>
-                          )
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3">
-                        {rec.daily_tasks?.map(
-                          (
-                            task: string,
-                            i: number
-                          ) => (
-                            <div
-                              key={i}
-                              className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-3 border border-cyan-100 text-sm font-bold text-cyan-700"
-                            >
-                              📅 {task}
-                            </div>
-                          )
-                        )}
-                      </div>
-
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Badges + Roadmap */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-              <div className="rounded-[35px] bg-white shadow-2xl p-8 border border-yellow-100">
-
-                <h2 className="text-4xl font-extrabold text-yellow-600 mb-8">
-                  🏆 Achievement Badges
-                </h2>
-
-                <div className="flex flex-wrap gap-4">
-
-                  {therapy.badges?.map(
-                    (badge: string, index: number) => (
-                      <div
-                        key={index}
-                        className="px-6 py-4 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 text-white font-bold shadow-xl text-lg hover:scale-105 transition-all duration-300"
-                      >
-                        {badge}
-                      </div>
-                    )
-                  )}
-
+                <div className="p-5 rounded-3xl glass-card">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                    Engagement & Affect
+                  </span>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white truncate">
+                    {faceDetected ? emotion : "Inactive"}
+                  </div>
+                  <span className="text-[11px] text-emerald-500 mt-2 block flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> {faceDetected ? "Live camera analysis" : "Waiting for face"}
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-[35px] bg-white shadow-2xl p-8 border border-cyan-100">
+              {/* Focus Timeline Chart */}
+              <div className="p-6 rounded-[32px] glass-card border border-black/[0.06] dark:border-white/[0.08]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span>Session Focus Curve</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-emerald-500">
+                    Avg: {attentionScore}%
+                  </span>
+                </div>
 
-                <h2 className="text-4xl font-extrabold text-cyan-700 mb-8">
-                  🗺 AI Therapy Roadmap
-                </h2>
-
-                <div className="space-y-5">
-
-                  {therapy.roadmap?.map(
-                    (week: any, index: number) => (
-                      <div
-                        key={index}
-                        className="rounded-3xl bg-gradient-to-r from-cyan-50 to-blue-50 p-5 border border-cyan-100 shadow-sm"
-                      >
-
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-2xl font-extrabold text-cyan-700">
-                            {week.week}
-                          </h3>
-
-                          <div className="text-3xl">
-                            🚀
-                          </div>
-                        </div>
-
-                        <p className="text-gray-700 font-bold mb-4 text-lg">
-                          {week.focus}
-                        </p>
-
-                        <div className="space-y-2">
-                          {week.tasks?.map(
-                            (task: string, i: number) => (
-                              <div
-                                key={i}
-                                className="bg-white rounded-2xl p-3 border border-cyan-100 font-semibold text-gray-700"
-                              >
-                                🎯 {task}
-                              </div>
-                            )
-                          )}
-                        </div>
-
-                      </div>
-                    )
-                  )}
-
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={history}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis dataKey="time" stroke="#888888" fontSize={10} tickLine={false} />
+                      <YAxis domain={[50, 100]} stroke="#888888" fontSize={10} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "rgba(15, 23, 42, 0.9)",
+                          border: "none",
+                          borderRadius: "12px",
+                          color: "#fff",
+                          fontSize: "12px"
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="#3b82f6"
+                        strokeWidth={2.5}
+                        dot={{ r: 3, fill: "#3b82f6" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
-            </div>
+              {/* Therapy Recommendations Box */}
+              <div className="p-6 rounded-[32px] glass-card border border-black/[0.06] dark:border-white/[0.08]">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>Real-Time Therapy Guidance</span>
+                </h3>
 
-            {/* Analytics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="space-y-3 text-xs">
+                  <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06]">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block mb-0.5">
+                      Visual Rest Break
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Encourage looking at a distant object 20 feet away every 5 minutes to relax eye muscles.
+                    </span>
+                  </div>
 
-              <div className="rounded-[28px] bg-gradient-to-br from-pink-500 to-rose-500 text-white p-7 shadow-2xl text-center">
-                <div className="text-5xl mb-4">👁</div>
-                <div className="text-lg font-bold opacity-90">
-                  Gaze Direction
-                </div>
-                <div className="text-3xl font-extrabold mt-2">
-                  {gazeDirection}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-7 shadow-2xl text-center">
-                <div className="text-5xl mb-4">😊</div>
-                <div className="text-lg font-bold opacity-90">
-                  Emotion
-                </div>
-                <div className="text-3xl font-extrabold mt-2">
-                  {emotion}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-7 shadow-2xl text-center">
-                <div className="text-5xl mb-4">🔥</div>
-                <div className="text-lg font-bold opacity-90">
-                  Streak Days
-                </div>
-                <div className="text-3xl font-extrabold mt-2">
-                  {therapy.streak_days}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-7 shadow-2xl text-center">
-                <div className="text-5xl mb-4">🎯</div>
-                <div className="text-lg font-bold opacity-90">
-                  Engagement
-                </div>
-                <div className="text-3xl font-extrabold mt-2">
-                  {engagement}
+                  <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06]">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block mb-0.5">
+                      Positive Mirror Reinforcement
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Ask the child to smile at their reflection on screen to foster happy visual self-acceptance.
+                    </span>
+                  </div>
                 </div>
               </div>
 
             </div>
 
           </div>
-        )}
+
+        </div>
+
       </div>
-    </div>
+    </AppShell>
   );
-}
+};
 
 export default AttentionMonitor;

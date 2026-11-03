@@ -1,29 +1,45 @@
 import cv2
 import time
 import numpy as np
-import joblib
 import os
 import statistics
-import dlib
 from scipy.spatial import distance as scipy_distance
-from recommendation_engine import recommendation_engine
 
-net = cv2.dnn.readNetFromCaffe(
-    "models/deploy.prototxt",
-    "models/res10_300x300_ssd_iter_140000.caffemodel"
-)
+net = None
+try:
+    if os.path.exists("models/deploy.prototxt") and os.path.exists("models/res10_300x300_ssd_iter_140000.caffemodel"):
+        if hasattr(cv2.dnn, "readNetFromCaffe"):
+            net = cv2.dnn.readNetFromCaffe(
+                "models/deploy.prototxt",
+                "models/res10_300x300_ssd_iter_140000.caffemodel"
+            )
+        else:
+            net = cv2.dnn.readNet(
+                "models/res10_300x300_ssd_iter_140000.caffemodel",
+                "models/deploy.prototxt",
+                "caffe"
+            )
+except Exception as e:
+    print(f"Notice: Caffe face detector net not loaded: {e}")
 
-behavior_model = None
-label_encoder = None
-
-if os.path.exists("behavior_model.pkl") and os.path.exists("label_encoder.pkl"):
-    behavior_model = joblib.load("behavior_model.pkl")
-    label_encoder = joblib.load("label_encoder.pkl")
-
-face_detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(
-    "models/shape_predictor_68_face_landmarks.dat"
-)
+face_detector = None
+predictor = None
+try:
+    try:
+        import dlib
+        face_detector = dlib.get_frontal_face_detector()
+        candidate_paths = [
+            "models/shape_predictor_68_face_landmarks.dat",
+            "shape_predictor_68_face_landmarks.dat"
+        ]
+        for cp in candidate_paths:
+            if os.path.exists(cp):
+                predictor = dlib.shape_predictor(cp)
+                break
+    except Exception as dlib_err:
+        print(f"Notice: dlib landmarks not initialized ({dlib_err}), using OpenCV fallbacks.")
+except Exception as e:
+    print(f"Notice: Eye landmark detector initialized in fallback mode: {e}")
 
 
 class AttentionTracker:
@@ -41,13 +57,39 @@ class AttentionTracker:
 
         self.position_history = []
         self.gaze_history = []
-        self.prediction_history = []
-        self.score_history = []
         self.focus_start_time = time.time()
         self.distraction_count = 0
         self.focus_loss_events = 0
 
     def analyze_frame(self, frame):
+        if frame is None or net is None:
+            return {
+                "attention_score": 0,
+                "engagement": "Tracking unavailable" if net is None else "Waiting for camera frame",
+                "face_detected": False,
+                "tracking_available": net is not None,
+                "eyes_detected": 0,
+                "blink_detected": False,
+                "gaze_direction": "Unknown",
+                "emotion": "Inactive",
+                "movement": 0,
+                "distance": 0,
+                "confidence": 0,
+                "movement_variance": 0,
+                "gaze_stability": 0,
+                "blink_frequency": 0,
+                "face_ratio": 0,
+                "hyperactivity_score": 0,
+                "focus_duration": round(time.time() - self.start_time, 1),
+                "therapy_recommendations": {
+                    "status": "Tracking unavailable",
+                    "suggestion": "Check camera permission and face detector setup"
+                },
+                "behavioral_status": "No live tracking data",
+            }
+
+        left_eye = []
+        right_eye = []
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         (frame_h, frame_w) = frame.shape[:2]
@@ -72,13 +114,16 @@ class AttentionTracker:
         emotion = "Neutral"
         movement = 0
         distance = 0
-        confidence = 50
+        confidence = 0
         movement_variance = 0
         gaze_stability = 0
         blink_frequency = 0
         face_ratio = 0
         hyperactivity_score = 0
         focus_duration = 0
+        left_eye = []
+        right_eye = []
+        eyes_detected = 0
 
         for i in range(detections.shape[2]):
 
@@ -86,6 +131,8 @@ class AttentionTracker:
 
             if confidence_detection < 0.6:
                 continue
+
+            confidence = int(confidence_detection * 100)
 
             box = detections[0, 0, i, 3:7] * np.array(
                 [frame_w, frame_h, frame_w, frame_h]
@@ -103,77 +150,73 @@ class AttentionTracker:
             frame_area = frame_w * frame_h
             face_ratio = round(face_area / frame_area, 4)
 
-            rect = dlib.rectangle(x, y, x + w, y + h)
-            landmarks = predictor(gray, rect)
-
-            left_eye = []
-            for n in range(36, 42):
-                px = landmarks.part(n).x
-                py = landmarks.part(n).y
-                left_eye.append((px, py))
-
-            right_eye = []
-            for n in range(42, 48):
-                px = landmarks.part(n).x
-                py = landmarks.part(n).y
-                right_eye.append((px, py))
-
-            eyes_detected = 2
-
             face_center_x = x + (w // 2)
             face_center_y = y + (h // 2)
-
             frame_center = frame.shape[1] // 2
+            frame_center_y = frame.shape[0] // 2
+            distance = float(np.hypot(face_center_x - frame_center, face_center_y - frame_center_y))
 
-            distance = abs(face_center_x - frame_center)
+            if predictor is not None and face_detector is not None:
+                try:
+                    rect = dlib.rectangle(x, y, x + w, y + h)
+                    landmarks = predictor(gray, rect)
 
-            def eye_aspect_ratio(eye):
-                A = scipy_distance.euclidean(eye[1], eye[5])
-                B = scipy_distance.euclidean(eye[2], eye[4])
-                C = scipy_distance.euclidean(eye[0], eye[3])
+                    left_eye = []
+                    for n in range(36, 42):
+                        px = landmarks.part(n).x
+                        py = landmarks.part(n).y
+                        left_eye.append((px, py))
 
-                if C == 0:
-                    return 0
+                    right_eye = []
+                    for n in range(42, 48):
+                        px = landmarks.part(n).x
+                        py = landmarks.part(n).y
+                        right_eye.append((px, py))
 
-                ear = (A + B) / (2.0 * C)
-                return ear
+                    eyes_detected = 2
 
-            leftEAR = eye_aspect_ratio(left_eye)
-            rightEAR = eye_aspect_ratio(right_eye)
+                    def eye_aspect_ratio(eye):
+                        A = scipy_distance.euclidean(eye[1], eye[5])
+                        B = scipy_distance.euclidean(eye[2], eye[4])
+                        C = scipy_distance.euclidean(eye[0], eye[3])
+                        if C == 0:
+                            return 0
+                        return (A + B) / (2.0 * C)
 
-            ear = (leftEAR + rightEAR) / 2.0
+                    leftEAR = eye_aspect_ratio(left_eye)
+                    rightEAR = eye_aspect_ratio(right_eye)
+                    ear = (leftEAR + rightEAR) / 2.0
 
-            if ear < 0.20:
-                blink_detected = True
-                self.blink_count += 1
+                    if ear < 0.20:
+                        blink_detected = True
+                        self.blink_count += 1
+
+                    nose_x = landmarks.part(30).x
+                    if nose_x < frame_center - 70:
+                        gaze_direction = "Left"
+                    elif nose_x > frame_center + 70:
+                        gaze_direction = "Right"
+                    else:
+                        gaze_direction = "Center"
+                except Exception as lm_err:
+                    eyes_detected = 2
+            else:
+                eyes_detected = 2
+                if face_center_x < frame_center - 80:
+                    gaze_direction = "Left"
+                elif face_center_x > frame_center + 80:
+                    gaze_direction = "Right"
+                else:
+                    gaze_direction = "Center"
 
             focus_duration = int(
                 time.time() - self.focus_start_time
             )
 
-            attention_score = max(55, 100 - int(distance / 4))
-
+            max_center_distance = float(np.hypot(frame_w / 2, frame_h / 2))
+            center_score = 100 - 45 * min(1.0, distance / max_center_distance)
+            attention_score = int(center_score)
             self.focus_frames += 1
-
-            if face_center_x < frame_center - 80:
-                gaze_direction = "Left"
-
-            elif face_center_x > frame_center + 80:
-                gaze_direction = "Right"
-
-            else:
-                gaze_direction = "Center"
-
-            nose_x = landmarks.part(30).x
-
-            if nose_x < frame_center - 70:
-                gaze_direction = "Left"
-
-            elif nose_x > frame_center + 70:
-                gaze_direction = "Right"
-
-            else:
-                gaze_direction = "Center"
 
             self.gaze_history.append(gaze_direction)
 
@@ -187,8 +230,10 @@ class AttentionTracker:
             ) if len(self.gaze_history) > 0 else 0
 
             if self.previous_face_x is not None:
-                movement = abs(face_center_x - self.previous_face_x)
-                movement = min(movement, 100)
+                movement = min(float(np.hypot(
+                    face_center_x - self.previous_face_x,
+                    face_center_y - self.previous_face_y
+                )), 100.0)
 
                 self.position_history.append(face_center_x)
 
@@ -211,13 +256,12 @@ class AttentionTracker:
 
                 avg_movement = sum(self.movement_history) / len(self.movement_history)
 
+                movement_penalty = min(20, int(avg_movement * 0.4))
+                attention_score -= movement_penalty
+
                 if avg_movement > 60:
-                    attention_score -= 25
                     engagement = "Restless"
                     emotion = "Restless"
-
-                elif avg_movement > 30:
-                    attention_score -= 10
 
             self.previous_face_x = face_center_x
             self.previous_face_y = face_center_y
@@ -289,79 +333,6 @@ class AttentionTracker:
             engagement = "Hyperactive"
             emotion = "Restless"
             attention_score -= 20
-        if behavior_model is not None:
-
-            features = [[
-                distance if face_detected else 0,
-                movement,
-                self.blink_count,
-                focus_percentage,
-                eyes_detected,
-                face_ratio,
-                movement_variance,
-                focus_duration,
-                gaze_stability,
-                blink_frequency,
-                confidence_detection if face_detected else 0,
-                hyperactivity_score
-            ]]
-
-            try:
-                prediction = behavior_model.predict(features)
-
-                engagement = label_encoder.inverse_transform(
-                    prediction
-                )[0]
-
-                probabilities = behavior_model.predict_proba(features)
-
-                confidence = int(
-                    np.max(probabilities) * 100
-                )
-
-                self.prediction_history.append(engagement)
-
-                if len(self.prediction_history) > 10:
-                    self.prediction_history.pop(0)
-
-                engagement = max(
-                    set(self.prediction_history),
-                    key=self.prediction_history.count
-                )
-
-                if engagement == "Deep Focus":
-                    attention_score = 95
-                    emotion = "Highly Focused"
-                    gaze_direction = "Center"
-
-                elif engagement == "Highly Attentive":
-                    attention_score = 82
-                    emotion = "Focused"
-                    gaze_direction = "Center"
-
-                elif engagement == "Moderately Engaged":
-                    attention_score = 65
-                    emotion = "Calm"
-                    gaze_direction = "Center"
-
-                elif engagement == "Restless":
-                    attention_score = 40
-                    emotion = "Restless"
-                    gaze_direction = "Side"
-
-                elif engagement == "Distracted":
-                    attention_score = 30
-                    emotion = "Distracted"
-                    gaze_direction = "Away"
-
-                else:
-                    attention_score = 15
-                    emotion = "Inactive"
-                    gaze_direction = "Away"
-
-            except Exception as e:
-                print("ML Prediction Error:", e)
-
         if not face_detected:
             engagement = "No Face Detected"
             emotion = "Inactive"
@@ -386,54 +357,42 @@ class AttentionTracker:
             engagement = "Very Low Attention"
             emotion = "Inactive"
 
-        if behavior_model is None:
-            confidence = min(
-                99,
-                attention_score + focus_percentage // 2
-            )
-
         attention_score = max(0, min(100, attention_score))
         confidence = max(0, min(99, confidence))
 
-        self.score_history.append(attention_score)
-
-        if len(self.score_history) > 10:
-            self.score_history.pop(0)
-
-        attention_score = int(
-            sum(self.score_history) /
-            len(self.score_history)
-        )
-
-        attention_score = int(
-            (0.8 * self.previous_score) +
-            (0.2 * attention_score)
-        )
+        if face_detected:
+            attention_score = int((0.55 * self.previous_score) + (0.45 * attention_score))
+        else:
+            attention_score = 0
 
         self.previous_score = attention_score
         attention_score = int(attention_score)
         focus_percentage = int(focus_percentage)
 
-        therapy_result = (
-            recommendation_engine.generate_recommendations(
-                {
-                    "attention_score": attention_score,
-                    "gaze_stability": gaze_stability,
-                    "blink_frequency": blink_frequency,
-                    "hyperactivity_score": hyperactivity_score,
-                    "focus_duration": focus_duration,
-                    "movement_variance": movement_variance,
-                    "engagement": engagement,
-                    "speech_delay": False,
-                    "slow_response": False
-                }
-            )
-        )
+        if not face_detected:
+            therapy_result = {
+                "status": "Waiting for face",
+                "suggestion": "Move into view and keep your face comfortably centered.",
+                "next_target": "Look toward the center of the screen",
+            }
+        elif attention_score >= 75:
+            therapy_result = {
+                "status": "Steady focus",
+                "suggestion": "Nice steady attention. Continue at a comfortable pace.",
+                "next_target": "Keep following the screen activity",
+            }
+        else:
+            therapy_result = {
+                "status": "Gentle refocus",
+                "suggestion": "Try a short visual rest, then return when ready.",
+                "next_target": "Look toward the center of the screen",
+            }
 
         return {
             "attention_score": attention_score,
             "engagement": engagement,
             "face_detected": face_detected,
+            "tracking_available": True,
             "eyes_detected": eyes_detected,
             "focus_percentage": focus_percentage,
             "session_time": round(time.time() - self.start_time, 1),

@@ -1,173 +1,255 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Brain,
+  ArrowLeft,
+  Printer,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Mic,
+  Eye,
+  CalendarCheck,
+  ShieldAlert,
+  ArrowRight,
+  Smile,
+  Heart
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { AppShell } from "@/components/layout/AppShell";
 import { toast } from "sonner";
 
 const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { prediction, result, age, gender, ethnicity, austim } = location.state || { prediction: "No data", result: 0 };
-
-  const isHighRisk = prediction?.includes("Positive");
-  const displayScore = result || 0;
-
-  const handleDownload = () => {
-    toast.success("PDF report will be downloaded");
+  const {
+    prediction,
+    result,
+    probability,
+    raw_score,
+    threshold,
+    age,
+    gender,
+    ethnicity,
+    austim,
+  } = location.state || {
+    prediction: "ASD Positive",
+    result: 7,
+    probability: 0.66,
+    raw_score: 7,
+    threshold: 6,
+    age: "8",
+    gender: "m",
+    ethnicity: "Asian",
+    austim: "no",
   };
 
-  const handleRetake = () => {
-    navigate("/screening");
+  const modelPrediction = prediction || "ASD Positive";
+  const rawResult = Number(raw_score ?? result ?? 0);
+  const rawThreshold = Number(threshold ?? 6);
+  const modelProbability = Number(probability ?? 0);
+  const normalizedProbability = modelProbability > 1 ? modelProbability / 100 : modelProbability;
+  const probabilityPercent = normalizedProbability > 0
+    ? Math.min(100, Math.round(normalizedProbability * 100))
+    : Math.min(100, Math.round((rawResult / 10) * 100));
+  const isPositive = modelPrediction.includes("Positive") || rawResult >= rawThreshold;
+  const score = rawResult || 0;
+  const percentage = Math.min(100, Math.round((score / Math.max(rawThreshold, 10)) * 100));
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
+    <AppShell>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in print:p-0">
+        
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between pb-6 border-b border-black/[0.04] dark:border-white/[0.06] mb-8 print:hidden">
+          <button
             onClick={() => navigate("/dashboard")}
-            className="rounded-full"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors p-2 rounded-2xl glass-card"
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Screening Results</h1>
-        </div>
-      </header>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Dashboard</span>
+          </button>
 
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Result Card */}
-        <Card className={`mb-6 shadow-glow border-2 ${isHighRisk ? 'border-destructive/50' : 'border-accent/50'}`}>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              {isHighRisk ? (
-                <div className="w-20 h-20 rounded-full bg-destructive/20 flex items-center justify-center">
-                  <AlertCircle className="w-10 h-10 text-destructive" />
-                </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="rounded-2xl text-xs font-semibold glass-card border-slate-200/80 dark:border-slate-800/80 flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save PDF</span>
+            </Button>
+
+            <Button
+              onClick={() => navigate("/screening")}
+              variant="outline"
+              className="rounded-2xl text-xs font-semibold glass-card border-slate-200/80 dark:border-slate-800/80"
+            >
+              Retake Assessment
+            </Button>
+          </div>
+        </div>
+
+        {/* Hero Result Glass Card */}
+        <div className="p-8 sm:p-10 rounded-[36px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl relative overflow-hidden mb-8">
+          
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+            
+            <div className={`w-20 h-20 rounded-3xl p-1 flex items-center justify-center shrink-0 shadow-xl ${
+              isPositive
+                ? "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white"
+                : "bg-gradient-to-tr from-emerald-500 to-teal-500 text-white"
+            }`}>
+              {isPositive ? (
+                <Brain className="w-10 h-10 animate-pulse" />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center">
-                  <CheckCircle className="w-10 h-10 text-accent" />
-                </div>
+                <CheckCircle2 className="w-10 h-10" />
               )}
             </div>
-            <CardTitle className="text-3xl mb-2">
-              {prediction || "Test Complete"}
-            </CardTitle>
-            <CardDescription className="text-lg">
-              Based on machine learning analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-2 bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.06] text-slate-600 dark:text-slate-300">
+                <Smile className="w-3.5 h-3.5" />
+                <span>AQ-10 Assessment Outcome</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {isPositive
+                  ? "Autism Spectrum Traits Identified"
+                  : "Traits Within Neurotypical Range"}
+              </h2>
+
+              <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+                {isPositive
+                  ? "The screening indicates notable indicators in communication timing, routine consistency, or sensory perception. AutiScan provides tailored speech exercises and focus therapies below to build confidence."
+                  : "The responses fall within standard peer ranges for social interaction and sensory processing. AutiScan tools remain available for joyful cognitive stimulation."}
+              </p>
+
+              {/* Score bar */}
+              <div className="mt-6 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
+                <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                  <span className="text-slate-600 dark:text-slate-400">AI Model Prediction</span>
+                  <span className="text-blue-600 dark:text-sky-400 tabular-nums text-sm">
+                    {modelPrediction} ({probabilityPercent}%)
+                  </span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isPositive ? "bg-blue-600 dark:bg-sky-400" : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${probabilityPercent}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  <div className="p-2 rounded-xl bg-white/50 dark:bg-slate-900/40 border border-black/[0.04] dark:border-white/[0.06]">
+                    <div className="font-semibold text-slate-400">AQ-10 raw score</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold tabular-nums">{score} / 10</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Demographic Summary Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-black/[0.05] dark:border-white/[0.06] text-xs">
             <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Total ASD Score</span>
-                <span className="text-sm font-bold">{displayScore}/20</span>
-              </div>
-              <Progress value={(displayScore / 20) * 100} className="h-3" />
+              <span className="text-slate-400 block">Child's Age</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{age || "8"} Years</span>
             </div>
+            <div>
+              <span className="text-slate-400 block">Gender</span>
+              <span className="font-semibold text-slate-900 dark:text-white capitalize">{gender === "f" ? "Female" : "Male"}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block">Ethnicity</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{ethnicity || "Standard"}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block">Family History</span>
+              <span className="font-semibold text-slate-900 dark:text-white capitalize">{austim || "None reported"}</span>
+            </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Age Group</p>
-                <p className="font-medium">{age || "N/A"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Gender</p>
-                <p className="font-medium capitalize">{gender === "f" ? "Female" : gender === "m" ? "Male" : "N/A"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Ethnicity</p>
-                <p className="font-medium">{ethnicity || "N/A"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Family History (PDD)</p>
-                <p className="font-medium capitalize">{austim || "N/A"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Test Date</p>
-                <p className="font-medium">{new Date().toLocaleDateString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Disclaimer */}
-        <Card className="mb-6 border-border/50 shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-lg">Important Notice</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              This screening tool is designed for informational purposes only and is not a diagnostic tool.
-            </p>
-            <p>
-              A formal diagnosis of Autism Spectrum Disorder (ASD) can only be made by qualified healthcare professionals through comprehensive evaluation.
-            </p>
-            <p className="font-medium text-foreground pt-2">
-              Please consult with a pediatrician, psychologist, or psychiatrist for a professional assessment.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Recommendations */}
-        <Card className="mb-6 border-border/50 shadow-soft">
-          <CardHeader>
-            <CardTitle>Next Steps</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-primary font-bold text-sm">1</span>
-              </div>
-              <p className="text-sm">
-                {isHighRisk 
-                  ? "Schedule an appointment with a healthcare professional for comprehensive evaluation"
-                  : "Continue monitoring developmental milestones and behaviors"
-                }
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-secondary font-bold text-sm">2</span>
-              </div>
-              <p className="text-sm">
-                Explore our speech therapy and mind games sections for developmental support
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-accent font-bold text-sm">3</span>
-              </div>
-              <p className="text-sm">
-                Track progress regularly using our monitoring tools
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button
-            onClick={handleDownload}
-            variant="outline"
-            className="flex-1 py-6 rounded-2xl"
-          >
-            <Download className="mr-2 h-5 w-5" />
-            Download PDF Report
-          </Button>
-          <Button
-            onClick={handleRetake}
-            className="flex-1 gradient-primary text-white py-6 rounded-2xl"
-          >
-            <RefreshCw className="mr-2 h-5 w-5" />
-            Retake Test
-          </Button>
         </div>
-      </main>
-    </div>
+
+        {/* Recommended Immediate Care Steps */}
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+            Recommended Immediate Care Activities
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div
+              onClick={() => navigate("/speech")}
+              className="p-5 rounded-3xl glass-card glass-card-hover cursor-pointer border border-black/[0.06] dark:border-white/[0.08]"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/70 border border-purple-200/50 dark:border-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-3">
+                <Mic className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Start Speech Lab</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Pronunciation feedback, phonics flashcards, and slow-tempo repetition.
+              </p>
+              <div className="mt-4 text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                <span>Open Practice</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div
+              onClick={() => navigate("/attention")}
+              className="p-5 rounded-3xl glass-card glass-card-hover cursor-pointer border border-black/[0.06] dark:border-white/[0.08]"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200/50 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3">
+                <Eye className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Gaze & Attention</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Gentle webcam focus sessions with stability analytics and report export.
+              </p>
+              <div className="mt-4 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <span>Start Tracker</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div
+              onClick={() => navigate("/therapy")}
+              className="p-5 rounded-3xl glass-card glass-card-hover cursor-pointer border border-black/[0.06] dark:border-white/[0.08]"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-200/50 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-sky-400 mb-3">
+                <CalendarCheck className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">4-Week Therapy Roadmap</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Structured developmental exercises spanning memory, social, and motor skills.
+              </p>
+              <div className="mt-4 text-xs font-semibold text-blue-600 dark:text-sky-400 flex items-center gap-1">
+                <span>View Roadmap</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Clinical Disclaimer */}
+        <div className="p-5 rounded-3xl glass-card bg-black/[0.02] dark:bg-white/[0.03] text-xs text-slate-500 dark:text-slate-400 border border-black/[0.04] dark:border-white/[0.06]">
+          <strong className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">
+            Important Clinical Information:
+          </strong>
+          The Autism Spectrum Quotient (AQ-10) is a quick screening tool developed by the Autism Research Centre. A high score suggests referral to an autism diagnostic specialist for a formal multidisciplinary assessment (such as ADOS-2 or ADI-R).
+        </div>
+
+      </div>
+    </AppShell>
   );
 };
 

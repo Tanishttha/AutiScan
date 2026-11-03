@@ -1,149 +1,91 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Brain, Heart, Shield, Users } from "lucide-react";
+import { ArrowLeft, Brain, Heart, Shield, Users, Sparkles, BookOpen, Smile } from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const About = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
+    <AppShell>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+        
+        {/* Header Bar */}
+        <div className="flex items-center gap-3 pb-6 border-b border-black/[0.04] dark:border-white/[0.06] mb-8">
+          <button
             onClick={() => navigate("/dashboard")}
-            className="rounded-full"
+            className="p-2 rounded-2xl glass-card text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+            aria-label="Back to dashboard"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Understanding Autism & Neurodiversity
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Empowering families with gentle science, early insights, and compassionate care
+            </p>
+          </div>
+        </div>
+
+        {/* Hero Glass Card */}
+        <div className="p-8 sm:p-10 rounded-[36px] glass-panel border border-black/[0.06] dark:border-white/[0.08] shadow-2xl mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Brain className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">What is Autism Spectrum (ASD)?</h2>
+              <span className="text-xs text-blue-600 dark:text-sky-400 font-medium">A natural neurological difference, not a deficit</span>
+            </div>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Autism Spectrum Disorder (ASD) describes differences in sensory processing, communication timing, and cognitive exploration. Autistic children often possess remarkable strengths in detail perception, logical pattern recognition, deep focus, and creative authenticity.
+          </p>
+        </div>
+
+        {/* Pillars Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+          
+          <div className="p-6 rounded-[32px] glass-card border border-black/[0.06] dark:border-white/[0.08]">
+            <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/70 border border-purple-200/50 dark:border-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+              <Users className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Social Communication</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+              Every child communicates uniquely. AutiScan builds phonics speech confidence and playful turn-taking at the child's own natural pace.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-[32px] glass-card border border-black/[0.06] dark:border-white/[0.08]">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200/50 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
+              <Heart className="w-5 h-5 text-rose-500" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Sensory Well-being</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+              Bright lights or loud sudden noises can trigger sensory overload. Our interface uses calming palettes, soft rounded glass, and zero jarring transitions.
+            </p>
+          </div>
+
+        </div>
+
+        {/* Action Callout */}
+        <div className="p-6 sm:p-8 rounded-[32px] glass-panel bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-sky-500/10 border border-blue-200/50 dark:border-blue-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Ready to begin today's session?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">Explore the interactive screening, speech lab, and attention monitor.</p>
+          </div>
+          <Button
+            onClick={() => navigate("/dashboard")}
+            className="rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-6 py-2.5 shadow-md shadow-blue-500/20 shrink-0"
+          >
+            Go to Dashboard
           </Button>
-          <h1 className="text-2xl font-bold">About Autism</h1>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Hero Section */}
-        <Card className="mb-8 shadow-glow border-2 border-primary/30">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center">
-                <Brain className="h-10 w-10 text-white" />
-              </div>
-            </div>
-            <CardTitle className="text-3xl mb-2">Understanding Autism</CardTitle>
-            <CardDescription className="text-base">
-              Autism Spectrum Disorder (ASD) is a developmental condition that affects communication and behavior
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        {/* What is ASD */}
-        <Card className="mb-6 border-border/50 shadow-soft">
-          <CardHeader>
-            <CardTitle>What is Autism Spectrum Disorder?</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-muted-foreground">
-            <p>
-              Autism Spectrum Disorder (ASD) is a complex neurodevelopmental condition that affects how people perceive and interact with the world around them. It includes a wide range of symptoms and skills.
-            </p>
-            <p>
-              ASD affects approximately 1 in 100 children worldwide. While autism is lifelong, early intervention and support can significantly improve quality of life and help individuals reach their full potential.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Key Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card className="border-border/50 shadow-soft">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-3">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg">Social Communication</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p>Differences in social interaction, understanding emotions, and non-verbal communication.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-soft">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mb-3">
-                <Brain className="h-6 w-6 text-secondary" />
-              </div>
-              <CardTitle className="text-lg">Patterns of Behavior</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p>Repetitive behaviors, specific interests, and preference for routine and predictability.</p>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Early Signs */}
-        <Card className="mb-6 border-border/50 shadow-soft">
-          <CardHeader>
-            <CardTitle>Early Signs & Screening</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Why early screening matters:</p>
-            <ul className="space-y-2 list-disc list-inside">
-              <li>Early intervention leads to better outcomes</li>
-              <li>Helps families access support services sooner</li>
-              <li>Enables tailored educational approaches</li>
-              <li>Improves quality of life for individuals and families</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Support & Resources */}
-        <Card className="mb-6 border-border/50 shadow-soft">
-          <CardHeader>
-            <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center mb-3">
-              <Heart className="h-6 w-6 text-accent" />
-            </div>
-            <CardTitle>Support & Intervention</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              AutiScan provides tools for screening, speech therapy, and cognitive development. However, comprehensive support typically includes:
-            </p>
-            <ul className="space-y-2 list-disc list-inside">
-              <li>Behavioral therapy and intervention programs</li>
-              <li>Speech and language therapy</li>
-              <li>Occupational therapy</li>
-              <li>Educational support and accommodations</li>
-              <li>Family counseling and support groups</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Disclaimer */}
-        <Card className="border-destructive/30 bg-destructive/5 shadow-soft">
-          <CardHeader>
-            <div className="w-12 h-12 rounded-xl bg-destructive/20 flex items-center justify-center mb-3">
-              <Shield className="h-6 w-6 text-destructive" />
-            </div>
-            <CardTitle className="text-lg">Important Disclaimer</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p className="text-muted-foreground">
-              This platform is designed for educational and screening purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment.
-            </p>
-            <p className="font-medium text-foreground">
-              Always seek the advice of qualified healthcare providers with any questions regarding autism or any medical condition.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Developer Credits */}
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>AutiScan - Screen. Support. Strengthen.</p>
-          <p className="mt-2">Developed with care for families and individuals on the autism spectrum</p>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 
