@@ -454,14 +454,46 @@ if __name__ == "__main__":
     import os
 
     try:
-        socketio.run(
-            app,
-            debug=False,
-            use_reloader=False,
-            host="0.0.0.0",
-            port=int(os.environ.get("PORT", 10000)),
-            allow_unsafe_werkzeug=True
-        )
+        if os.environ.get("AUTISCAN_IPC_WORKER") == "1":
+            import json
+            import sys
+
+            # The Express server sends one JSON request per line over stdin and
+            # expects one JSON response per line on stdout.
+            for line in sys.stdin:
+                rpc_request = {}
+                try:
+                    rpc_request = json.loads(line)
+                    with app.test_client() as client:
+                        response = client.open(
+                            rpc_request.get("path", "/"),
+                            method=rpc_request.get("method", "GET"),
+                            json=rpc_request.get("body"),
+                        )
+                    payload = response.get_json(silent=True)
+                    if payload is None:
+                        payload = response.get_data(as_text=True)
+                    rpc_response = {
+                        "id": rpc_request.get("id"),
+                        "status": response.status_code,
+                        "payload": payload,
+                    }
+                except Exception as error:
+                    rpc_response = {
+                        "id": rpc_request.get("id"),
+                        "status": 500,
+                        "payload": {"status": "error", "message": str(error)},
+                    }
+                print(f"__AUTISCAN_RPC__{json.dumps(rpc_response)}", flush=True)
+        else:
+            socketio.run(
+                app,
+                debug=False,
+                use_reloader=False,
+                host="0.0.0.0",
+                port=int(os.environ.get("PORT", 10000)),
+                allow_unsafe_werkzeug=True
+            )
     finally:
         if camera is not None:
             camera.release()
